@@ -3,73 +3,97 @@
   (:require
     [cljs.core.async :as async :refer [put! chan timeout <! >!]]))
 
-(def buffer-time 0.75)
-(def progress-interval 50)
 (defonce -control-chan (chan))
 
-; (defonce context (js/AudioContext.))
-(defonce context nil)
+(defonce context (js/AudioContext.))
+
 (defn current-time [] (.-currentTime context))
 
 (defn tone [start]
-  (let [osc (.createOscillator context)]
+  (let [osc (.createOscillator context) ]
     (.connect osc (.-destination context))
     (set! (.. osc -frequency -value) 440)
     (.start osc start)
-    (.stop osc (+ start 0.6))))
+    (.stop osc (+ start 0.05))))
 
-(def song {:tempo 120
-           :parts [{:beats 3
-                    :sounds [
-                             {:beat 0
+(def song {:tempo 96
+           :parts [
+                   {:beats 3
+                    :sounds [{:beat 0
                               :tick 0
                               :play tone}
                              {:beat 1
                               :tick 0
+                              :play tone}
+                             {:beat 1
+                              :tick 48
+                              :play tone}]}
+                   {:beats 4
+                    :sounds [{:beat 3
+                              :tick 0
                               :play tone}]}]})
 
-(defn fill [from til length start]
-  )
+(defn fill [from til duration-secs start-secs]
+  (let [from (* duration-secs (Math/floor (/ from duration-secs)))]
+    (loop [times [] now from]
+      (if (< now til)
+        (recur (conj times (+ now start-secs)) (+ now duration-secs))
+        times))))
 
 (defn song->seconds [song]
   (let [{:keys [tempo parts]} song
-        beats-per-sec (/ tempo 60)
-        ticks-per-sec (/ beats-per-sec 96)]
+        secs-per-beat (/ 60 tempo)
+        secs-per-tick (/ secs-per-beat 96)]
     (mapv
       (fn [part]
-        {:duration-secs (* beats-per-sec (:beats part))
+        {:duration-secs (* secs-per-beat (:beats part))
          :sounds (mapv (fn [sound]
                          {:play (:play sound)
                           :start-secs (+
-                                       (* beats-per-sec (:beat sound))
-                                       (* ticks-per-sec (:tick sound)))})
+                                       (* secs-per-beat (:beat sound))
+                                       (* secs-per-tick (:tick sound)))})
                        (:sounds part))})
       (:parts song))))
 
 (defn notes-in-window [song from til]
   "given a from and til in seconds
   returns a vector of {:start sec :play (fn [start] )}"
-  (song->seconds song))
+  (filter #(> (:start %) from)
+          (flatten
+            (map
+              (fn [{:keys [duration-secs sounds]}]
+                (map (fn [{:keys [start-secs play] }]
+                       (map (fn [start] {:start start :play play})
+                            (fill from til duration-secs start-secs))) sounds))
+              (song->seconds song)))))
 
 (defn -schedule [started-at from til]
-  (map (fn [note]
-         ((:play note) (+ started-at (:start note)))) (notes-in-window song from til)))
+  (comment .log js/console (- (current-time) started-at) from til (< (- (current-time) started-at) from))
+  (let [notes (notes-in-window song from til)]
+    (comment .log js/console "scheduling " (count notes))
+    (doseq [note notes]
+      (let [start (+ started-at (:start note))]
+        ((:play note) start)))))
 
-(defn -play [now control-chan]
-  (let [started-at (now)]
-    (-schedule started-at 0 buffer-time)
-    (go-loop [scheduled-until buffer-time]
-             (let [[_ port] (async/alts! [(timeout progress-interval) control-chan])]
-               (when (not= port control-chan)
-                 (let [progress (- (now) started-at)]
+(go-loop []
+         (when (= :play (<! -control-chan))
+           (let [started-at (current-time)
+                 buffer-time 0.50
+                 progress-interval 50]
+             (-schedule started-at 0 buffer-time)
+             (loop [scheduled-until buffer-time]
+               (when (not= :stop (first (async/alts! [(timeout progress-interval)
+                                                      -control-chan])))
+                 (let [progress (- (current-time) started-at)]
                    (if (> (+ progress buffer-time) scheduled-until)
                      (let [new-schedule-end (+ scheduled-until buffer-time)]
                        (-schedule started-at scheduled-until new-schedule-end)
                        (recur new-schedule-end))
-                     (recur scheduled-until))))))))
+                     (recur scheduled-until)))))))
+         (recur))
 
-(defn play [] (-play current-time -control-chan))
+(defn play []
+  (put! -control-chan :play))
+
 (defn stop []
-  (.log js/console "stop")
   (put! -control-chan :stop))
-
