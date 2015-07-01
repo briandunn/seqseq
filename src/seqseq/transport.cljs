@@ -16,9 +16,9 @@
     (.start osc start)
     (.stop osc (+ start 0.05))))
 
-(def song {:tempo 96
+(def song {:tempo 120
            :parts [
-                   {:beats 3
+                   {:beats 2
                     :sounds [{:beat 0
                               :tick 0
                               :play tone}
@@ -29,7 +29,7 @@
                               :tick 48
                               :play tone}]}
                    {:beats 4
-                    :sounds [{:beat 3
+                    :sounds [{:beat 1
                               :tick 0
                               :play tone}]}]})
 

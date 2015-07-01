@@ -1,5 +1,7 @@
 (ns seqseq.test
-  (:require [cljs.test :refer-macros [deftest testing is]]
+  (:require-macros [cljs.test
+                    :refer (is deftest run-tests testing)])
+  (:require [cljs.test :as t]
             [seqseq.transport :as transport]
             ))
 
@@ -19,3 +21,5 @@
   (is (= (transport/fill 1 2 1 0.25) [1.25]))
   (is (= (transport/fill 1 2 0.25 0) [1 1.25 1.5 1.75]))
   )
+
+(run-tests)

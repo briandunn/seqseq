@@ -10,12 +10,12 @@
                   [org.clojure/clojure    "1.7.0-RC1"  :scope "provided"]
                   [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
                   [boot-cljs-test/node-runner "0.1.0" :scope "test"]
-                  ; [secretary              "1.2.3"]
+                  [secretary              "1.2.3"]
                   [org.omcljs/om          "0.8.8"]])
 
 (require
 '[adzerk.boot-cljs      :refer [cljs]]
-'[adzerk.boot-cljs-repl :refer [cljs-repl]]
+'[adzerk.boot-cljs-repl :refer [cljs-repl start-repl]]
 '[adzerk.boot-reload    :refer [reload]]
 '[pandeiro.boot-http    :refer [serve]]
 '[boot-cljs-test.node-runner :refer :all]
@@ -29,7 +29,13 @@
     (reload)
     (speak)
     (cljs-repl)
-    (cljs-test-node-runner :namespaces '[seqseq.test])
     (cljs :unified true
-          :source-map true)
-    (run-cljs-test)))
+          :source-map true)))
+
+(deftask auto-test []
+  (set-env! :source-paths #{"src" "test"})
+  (comp (watch)
+        (cljs-test-node-runner :namespaces '[seqseq.test])
+        (cljs :source-map true
+              :optimizations :none)
+        (run-cljs-test)))
