@@ -10,8 +10,8 @@
                   [org.clojure/clojure    "1.7.0-RC1"  :scope "provided"]
                   [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
                   [boot-cljs-test/node-runner "0.1.0" :scope "test"]
-                  [secretary              "1.2.3"]
-                  [org.omcljs/om          "0.8.8"]])
+                  [secretary "1.2.3"]
+                  [reagent   "0.5.0"]])
 
 (require
 '[adzerk.boot-cljs      :refer [cljs]]
