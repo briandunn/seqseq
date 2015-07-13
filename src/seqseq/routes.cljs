@@ -15,10 +15,13 @@
   (.replace (.-location js/window) route))
 
 (defroute song-new "/songs/new" []
-  (put! chan :song-new))
+  (put! chan [:song-new]))
+
+(defroute part "/songs/new/parts/:id" {:as part}
+  (put! chan [:song-new (:id part)]))
 
 (defroute root "/" []
-  (put! chan :song-index))
+  (put! chan [:song-index]))
 
 (let [history (History.)
       navigation EventType/NAVIGATE]
