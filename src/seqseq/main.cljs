@@ -32,10 +32,18 @@
 (defn play-bar [duration]
   [:div.play-bar {:style {:animation-duration (str duration "s") }}])
 
+(def pitch-names ["C" "C#" "D" "D#" "E" "F" "F#" "G" "G#" "A" "A#" "B"])
+
+(def pitches (reverse (map (fn [i]
+                             (let [name (nth pitch-names (mod i (count pitch-names)))]
+                               {:name name :num i :sharp (some  (partial = \#) name) }
+                               )
+                             ) (range 88))))
+
 (defn part [song part-name]
   (let [part (get-in @song [:parts 0])
         beats (:beats part)
-        key-list (range 88)]
+        key-list pitches]
     [:section#piano-roll
      [:section#grid
       (when (not= :stop (:transport @app-state))
@@ -50,9 +58,9 @@
                                           :width "4%" }}])]
       [:ul
        (for [k key-list]
-         ^{:key k} [:li.row])]]
+         ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]
      [:ul#keyboard (for [k key-list]
-                     ^{:key k} [:li.row k] )]]))
+                     ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")} (:name k)] )]]))
 
 (defn parts [names]
   [:section#parts
