@@ -25,7 +25,7 @@
   (comp
     (serve :dir "target/")
     (watch)
-    (reload)
+    (reload :on-jsreload 'seqseq.main/init)
     (speak)
     (cljs-repl)
     (cljs :unified true

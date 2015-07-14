@@ -127,6 +127,12 @@
 (reagent/render [root]
                 (js/document.getElementById "app"))
 
-(go-loop []
-         (swap! app-state assoc :nav (<! routes/chan))
-         (recur))
+(defn init []
+  ; listen for route changes
+  (let [route-chan (routes/init)]
+    (go-loop []
+             (when-let [route (<! route-chan)]
+               (swap! app-state assoc :nav route)
+               (recur)))))
+
+(init)
