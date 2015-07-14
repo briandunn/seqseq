@@ -23,7 +23,7 @@
   (let [song-chan (chan)]
   (transport/play song-chan)
   (go-loop []
-           (>! song-chan @song) (recur))))
+          (when (>! song-chan @song) (recur)))))
 
 (defn stop [state]
   (swap! state assoc :transport :stop)
@@ -133,6 +133,9 @@
     (go-loop []
              (when-let [route (<! route-chan)]
                (swap! app-state assoc :nav route)
-               (recur)))))
+               (recur))))
+
+  ; init transport
+  (transport/init))
 
 (init)

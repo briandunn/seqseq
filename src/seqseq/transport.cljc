@@ -1,12 +1,12 @@
+; vim: set ft=clojure:
 (ns seqseq.transport
   #?(:cljs (:require-macros [cljs.core.async.macros :refer [go-loop go]]))
   (:require
-    #?@(:clj [[clojure.core.async :as async :refer [go go-loop put! chan timeout <! >!]]]
-        :cljs [[cljs.core.async   :as async :refer [put! chan timeout <! >!]]])))
+    #?@(:clj [[clojure.core.async :as async :refer [go go-loop put! chan timeout <! >! close!]]]
+        :cljs [[cljs.core.async   :as async :refer [put! chan timeout <! >! close!]]])))
 
-(defonce -control-chan (chan))
-
-#?(:cljs (defonce context (new js/AudioContext)) )
+#?(:cljs (defonce context (new js/AudioContext))
+(enable-console-print!))
 
 #?(:clj (defonce context nil))
 
@@ -25,8 +25,6 @@
       (if (< (+ start-secs now) til)
         (recur (conj times (+ now start-secs)) (+ now duration-secs))
         times))))
-
-(defonce pulse (chan))
 
 (defn part->sec [part tempo]
   (* (:beats part) (/ 60 tempo)))
@@ -69,24 +67,31 @@
         (let [start (+ started-at (:start note))]
           ((:play note) start))))))
 
-(go-loop []
-         (let [[op song-chan now] (<! -control-chan)]
-           (when (= :play op)
-             (let [started-at (now)
-                   buffer-time 0.50
-                   progress-interval 50]
-               (-schedule song-chan started-at 0 buffer-time)
-               (loop [scheduled-until buffer-time]
-                 (let [[[op _] _] (async/alts! [(timeout progress-interval)
-                                               -control-chan])]
-                   (when (not= :stop op)
-                     (let [progress (- (now) started-at)]
-                       (if (> (+ progress buffer-time) scheduled-until)
-                         (let [new-schedule-end (+ scheduled-until buffer-time)]
-                           (-schedule song-chan started-at scheduled-until new-schedule-end)
-                           (recur new-schedule-end))
-                         (recur scheduled-until)))))))))
-         (recur))
+
+
+(defonce -control-chan (chan))
+
+(defn init []
+  (go-loop []
+           (when-let [[op song-chan now] (<! -control-chan)]
+             (when (= :play op)
+               (let [started-at (now)
+                     buffer-time 0.50
+                     progress-interval 50]
+                 (-schedule song-chan started-at 0 buffer-time)
+                 (loop [scheduled-until buffer-time]
+                   (let [[[op _] _] (async/alts! [(timeout progress-interval)
+                                                  -control-chan])]
+                     (when (not= :stop op)
+                       (let [progress (- (now) started-at)]
+                         (if (> (+ progress buffer-time) scheduled-until)
+                           (let [new-schedule-end (+ scheduled-until buffer-time)]
+                             (-schedule song-chan started-at scheduled-until new-schedule-end)
+                             (recur new-schedule-end))
+                           (recur scheduled-until))))
+                     (when (= :stop op)
+                       (close! song-chan)))))))
+             (recur)))
 
 (defn play
   ([song-chan]
