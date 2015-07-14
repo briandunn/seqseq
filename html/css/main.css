@@ -308,11 +308,24 @@ section.controls {
 .song .F {
   background: black; }
 
+
+@keyframes playbar {
+  from {
+    left: 0%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
 .play-bar {
   position: absolute;
   height: 100%;
-  transition-timing-function: linear;
-  transition-property: left;
+
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  animation-name: playbar;
   width: 4px;
   background: #CC0000;
   z-index: 3;
