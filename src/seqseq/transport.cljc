@@ -5,19 +5,6 @@
     #?@(:clj [[clojure.core.async :as async :refer [go go-loop put! chan timeout <! >! close!]]]
         :cljs [[cljs.core.async   :as async :refer [put! chan timeout <! >! close!]]])))
 
-#?(:cljs (defonce context (new js/AudioContext)))
-
-#?(:clj (defonce context nil))
-
-(defn current-time [] (.-currentTime context))
-
-(defn tone [start]
-  (let [osc (.createOscillator context) ]
-    (.connect osc (.-destination context))
-    (set! (.. osc -frequency -value) 440)
-    (.start osc start)
-    (.stop osc (+ start 0.05))))
-
 (defn fill [from til duration-secs start-secs]
   (let [from (* duration-secs (Math/floor (/ from duration-secs)))]
     (loop [times [] now from]
@@ -35,13 +22,14 @@
     (mapv
       (fn [part i]
         (let [part-duration #(part->sec part tempo)]
-        {:duration-secs (part-duration)
-         :sounds (mapv (fn [sound]
-                                 {:play (:play sound)
+          {:duration-secs (part-duration)
+           :sounds (mapv (fn [sound]
+                           (assoc sound
                                   :start-secs (+
                                                (* secs-per-beat (:beat sound))
-                                               (* secs-per-tick (:tick sound)))})
-                               (:sounds part))}))
+                                               (* secs-per-tick (:tick sound)))
+                                  :duration   (* secs-per-tick (:duration sound))))
+                         (:sounds part))}))
       (:parts song) (range))))
 
 (defn notes-in-window [song from til]
@@ -51,9 +39,9 @@
           (flatten
             (map
               (fn [{:keys [duration-secs sounds]}]
-                (map (fn [{:keys [start-secs play] }]
-                       (map (fn [start] {:start start :play play})
-                            (fill from til duration-secs start-secs))) sounds))
+                (map (fn [sound]
+                       (map (fn [start] (assoc sound :start start))
+                            (fill from til duration-secs (:start-secs sound)))) sounds))
               (song->seconds song)))))
 
 (defn -schedule [song-chan started-at from til]
@@ -64,7 +52,7 @@
     (let [notes (notes-in-window (<! song-chan) from til)]
       (doseq [note notes]
         (let [start (+ started-at (:start note))]
-          ((:play note) start))))))
+          ((:play note) start (dissoc note :play :beat :tick)))))))
 
 
 
@@ -89,11 +77,8 @@
                      (recur scheduled-until)))
                  (close! song-chan))))))
 
-(defn play
-  ([song-chan]
-   (play song-chan current-time))
-  ([song-chan now]
-   (-play song-chan now)))
+(defn play [song-chan now]
+  (-play song-chan now))
 
 (defn stop []
   (put! -control-chan :stop))
