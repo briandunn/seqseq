@@ -67,7 +67,7 @@
        (for [m (range beats)]
          ^{:key m} [:div.measure {:style {:width (str (/ 100.0 beats) "%")}}])]
       [:ul.notes (for [n (:sounds part)]
-                   ^{:key n}[:li {:style (note->style n beats) }])]
+                   ^{:key (apply str (map (partial get n) [:beat :tick :pitch]))}[:li {:style (note->style n beats) } ])]
       [:ul
        (for [k key-list]
          ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]
