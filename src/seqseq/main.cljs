@@ -54,12 +54,12 @@
         pitches (count pitches)
         part-ticks (* 96 beats) ]
     {:left (f->% (/ (+ tick (* 96 beat)) part-ticks))
-       :top  (str "calc(" (f->% (/ (- pitches pitch 1) pitches)) " + 3px)")
-       :width (f->% (/ duration part-ticks))}))
+     :top  (str "calc(" (f->% (/ (- pitches pitch 1) pitches)) " + 3px)")
+     :width (f->% (/ duration part-ticks))}))
 
 (defn toggle-selection [song note-path]
   (swap! song update-in note-path (fn [note]
-                               (assoc note :selected? (not (:selected? note))))))
+                                    (assoc note :selected? (not (:selected? note))))))
 
 
 (defn part [current-part tempo {:keys [on-note-click]}]
@@ -95,23 +95,23 @@
 (def tone (partial synth/tone context))
 
 (def current-song (atom {:tempo 120
-                    :parts [
-                            {:beats 2
-                             :sounds [{:beat 0
-                                       :tick 0
-                                       :pitch 57
-                                       :duration 48
-                                       :play tone}
-                                      {:beat 1
-                                       :tick 0
-                                       :pitch 59
-                                       :duration 24
-                                       :play tone}
-                                      {:beat 1
-                                       :tick 48
-                                       :pitch 60
-                                       :duration 12
-                                       :play tone}]}]}))
+                         :parts [
+                                 {:beats 2
+                                  :sounds [{:beat 0
+                                            :tick 0
+                                            :pitch 57
+                                            :duration 48
+                                            :play tone}
+                                           {:beat 1
+                                            :tick 0
+                                            :pitch 59
+                                            :duration 24
+                                            :play tone}
+                                           {:beat 1
+                                            :tick 48
+                                            :pitch 60
+                                            :duration 12
+                                            :play tone}]}]}))
 
 (def part-names ["Q" "W" "E" "R" "A" "S" "D" "F"])
 (defn current-part-index [] (.indexOf (to-array part-names) (last (:nav @app-state))))
@@ -165,7 +165,7 @@
     [:h1
      [:a {:href (routes/root)} "seqseq"]]]
    (let [page-component ((get-in @app-state [:nav 0]) {:song-index song-index
-                                       :song-new song-new})]
+                                                       :song-new song-new})]
      [page-component app-state]
      )])
 
@@ -175,7 +175,7 @@
 (defn handle-key-up [k]
   (when (= "X" k)
     (swap! current-song update-in [:parts (current-part-index) :sounds] (fn [sounds]
-                                                                           (vec (remove :selected? sounds))))))
+                                                                          (vec (remove :selected? sounds))))))
 
 (defn init []
   ; listen for route changes
