@@ -3,8 +3,10 @@
   (:require [reagent.core :as reagent :refer [atom]]
             [seqseq.transport :as transport]
             [seqseq.routes :as routes]
+            [goog.events :as events]
             [seqseq.synth :as synth]
-            [cljs.core.async :as async :refer [chan <! >!]]))
+            [cljs.core.async :as async :refer [chan <! >!]])
+  (:import [goog.events EventType]))
 
 (enable-console-print!)
 
@@ -55,19 +57,29 @@
        :top  (str "calc(" (f->% (/ (- pitches pitch 1) pitches)) " + 3px)")
        :width (f->% (/ duration part-ticks))}))
 
-(defn part [song part-name]
-  (let [part (get-in @song [:parts 0])
-        beats (:beats part)
+(defn toggle-selection [song note-path]
+  (swap! song update-in note-path (fn [note]
+                               (assoc note :selected? (not (:selected? note))))))
+
+
+(defn part [current-part tempo {:keys [on-note-click]}]
+  (let [beats (:beats current-part)
         key-list pitches]
     [:section#piano-roll
      [:section#grid
       (when (not= :stop (:transport @app-state))
-        [play-bar (transport/part->sec part (:tempo @song))])
+        [play-bar (transport/part->sec current-part tempo)])
       [:div.measures
-       (for [m (range beats)]
+       (for [m  (range beats)]
          ^{:key m} [:div.measure {:style {:width (str (/ 100.0 beats) "%")}}])]
-      [:ul.notes (for [n (:sounds part)]
-                   ^{:key (apply str (map (partial get n) [:beat :tick :pitch]))}[:li {:style (note->style n beats) } ])]
+      [:ul.notes (map (fn [n i]
+                        ^{:key (apply str (map (partial get n) [:beat :tick :pitch]))}
+                        [:li {:style (note->style n beats)
+                              :class (when (:selected? n) "selected")
+                              :onClick #(on-note-click i) } ])
+                      (:sounds current-part)
+                      (range)
+                      )]
       [:ul
        (for [k key-list]
          ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]
@@ -82,8 +94,7 @@
 
 (def tone (partial synth/tone context))
 
-(defn song-new [state]
-  (let [song (atom {:tempo 120
+(def current-song (atom {:tempo 120
                     :parts [
                             {:beats 2
                              :sounds [{:beat 0
@@ -100,7 +111,13 @@
                                        :tick 48
                                        :pitch 60
                                        :duration 12
-                                       :play tone}]}]})]
+                                       :play tone}]}]}))
+
+(def part-names ["Q" "W" "E" "R" "A" "S" "D" "F"])
+(defn current-part-index [] (.indexOf (to-array part-names) (last (:nav @app-state))))
+
+(defn song-new [state]
+  (let [song current-song]
     (fn [state]
       [:dev
        [:section.controls
@@ -135,11 +152,11 @@
              [:button {:on-click (fn [e] (stop state))} "◼︎" ]
              [:button {:on-click (fn [e] (play state song))} "►"]
              )]]]]
-       (let [[_ part-name] (:nav @state)
-             part-names ["Q" "W" "E" "R" "A" "S" "D" "F"]
-             ]
-         (if part-name
-           [part song part-name]
+       (let [part-index (current-part-index)]
+         (if (not= part-index -1)
+           [part (nth (:parts @song) part-index) (:tempo @song) {:on-note-click (fn [note-index]
+                                                                                  (toggle-selection song [:parts part-index :sounds note-index ]))}]
+
            [parts part-names]))])))
 
 (defn root [props]
@@ -155,6 +172,11 @@
 (reagent/render [root]
                 (js/document.getElementById "app"))
 
+(defn handle-key-up [k]
+  (when (= "X" k)
+    (swap! current-song update-in [:parts (current-part-index) :sounds] (fn [sounds]
+                                                                           (vec (remove :selected? sounds))))))
+
 (defn init []
   ; listen for route changes
   (let [route-chan (routes/init)]
@@ -164,6 +186,10 @@
                (recur))))
 
   ; init transport
-  (transport/init))
+  (transport/init)
 
+  ; listen to the keyboard
+  (let [keyup (fn [e] (handle-key-up (.fromCharCode js/String (.-keyCode e))))]
+    (events/removeAll js/window EventType.KEYUP)
+    (events/listen js/window EventType.KEYUP keyup)))
 (init)
