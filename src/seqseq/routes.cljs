@@ -30,6 +30,4 @@
   (.setEnabled history true)
   (.setToken history (.getToken history)))
 
-(defn init []
-  (put! -chan false)
-  -chan)
+(defn init [] -chan)
