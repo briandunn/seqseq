@@ -194,7 +194,7 @@
 (reagent/render [root]
                 (js/document.getElementById "app"))
 
-(defn handle-key-up [k e]
+(defn handle-key-press [k e]
   (when (= "x" k)
     (swap! current-song update-in [:parts (current-part-index) :sounds] (fn [sounds]
                                                                           (vec (remove :selected? sounds)))))
@@ -220,7 +220,7 @@
   (transport/init)
 
   ; listen to the keyboard
-  (let [keyup (fn [e] (handle-key-up (.fromCharCode js/String (.-keyCode e)) e))]
+  (let [keyup (fn [e] (handle-key-press (.fromCharCode js/String (.-keyCode e)) e))]
     (events/removeAll js/window EventType.KEYPRESS)
     (events/listen js/window EventType.KEYPRESS keyup)))
 (init)
