@@ -172,10 +172,19 @@
 (reagent/render [root]
                 (js/document.getElementById "app"))
 
-(defn handle-key-up [k]
-  (when (= "X" k)
+(defn handle-key-up [k e]
+  (when (= "x" k)
     (swap! current-song update-in [:parts (current-part-index) :sounds] (fn [sounds]
-                                                                          (vec (remove :selected? sounds))))))
+                                                                          (vec (remove :selected? sounds)))))
+  (when (= " " k)
+    (.preventDefault e)
+    (.stopPropagation e)
+    (((:transport @app-state)
+      {:stop
+       #(play app-state current-song)
+       :play
+       #(stop app-state)
+       }))))
 
 (defn init []
   ; listen for route changes
@@ -189,7 +198,7 @@
   (transport/init)
 
   ; listen to the keyboard
-  (let [keyup (fn [e] (handle-key-up (.fromCharCode js/String (.-keyCode e))))]
-    (events/removeAll js/window EventType.KEYUP)
-    (events/listen js/window EventType.KEYUP keyup)))
+  (let [keyup (fn [e] (handle-key-up (.fromCharCode js/String (.-keyCode e)) e))]
+    (events/removeAll js/window EventType.KEYPRESS)
+    (events/listen js/window EventType.KEYPRESS keyup)))
 (init)
