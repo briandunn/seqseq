@@ -43,9 +43,9 @@
 
 (def pitches (reverse (map (fn [i]
                              (let [name (nth pitch-names (mod i (count pitch-names)))]
-                               {:name (str name i) :num i :sharp (some  (partial = \#) name) }
-                               )
-                             ) (range 88))))
+                               {:name (str name i) :num i :sharp (some  (partial = \#) name)}))
+                           (range 88))))
+
 
 (defn f->% [f]
   (str (* 100 f) "%"))
