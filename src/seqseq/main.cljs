@@ -23,6 +23,7 @@
 
 (defonce context (new js/AudioContext))
 (defn current-time [] (.-currentTime context))
+(def tone (partial synth/tone context))
 
 (defn play [state song]
   (swap! state assoc :transport :play)
@@ -61,8 +62,22 @@
   (swap! song update-in note-path (fn [note]
                                     (assoc note :selected? (not (:selected? note))))))
 
+(defn- coords->note [coords beats]
+  (let [total-ticks (.round js/Math (* beats 96 (:x coords)))
+        tick (mod total-ticks 96)
+        beat (/ (- total-ticks tick) 96)
+        pitch (- (.ceil js/Math (* (- 1 (:y coords)) (count pitches))) 1)]
+    {:beat beat
+     :tick tick
+     :pitch pitch
+     :duration 12
+     :play tone}))
 
-(defn part [current-part tempo {:keys [on-note-click]}]
+(defn add-note [song part-path coords]
+  (swap! song update-in part-path (fn [part]
+                                      (update-in part [:sounds] conj (coords->note coords (:beats part))))))
+
+(defn part [current-part tempo {:keys [on-note-click on-note-add]}]
   (let [beats (:beats current-part)
         key-list pitches]
     [:section#piano-roll
@@ -72,14 +87,21 @@
       [:div.measures
        (for [m  (range beats)]
          ^{:key m} [:div.measure {:style {:width (str (/ 100.0 beats) "%")}}])]
-      [:ul.notes (map (fn [n i]
-                        ^{:key (apply str (map (partial get n) [:beat :tick :pitch]))}
-                        [:li {:style (note->style n beats)
-                              :class (when (:selected? n) "selected")
-                              :onClick #(on-note-click i) } ])
-                      (:sounds current-part)
-                      (range)
-                      )]
+      [:ul.notes {:onClick (fn [e]
+                             (on-note-add
+                               (let [rect (.. e -target getBoundingClientRect)]
+                                 {:x (/ (- (.-screenX e) (.-left rect)) (.-width rect))
+                                  :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))})))}
+       (map (fn [n i]
+              ^{:key (apply str (map (partial get n) [:beat :tick :pitch]))}
+              [:li {:style (note->style n beats)
+                    :class (when (:selected? n) "selected")
+                    :onClick (fn [e]
+                               (.stopPropagation e)
+                               (on-note-click i))}])
+            (:sounds current-part)
+            (range)
+            )]
       [:ul
        (for [k key-list]
          ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]
@@ -91,8 +113,6 @@
    [:ul (for [part names]
           ^{:key part} [:li.part
                         [:a {:href (routes/part {:id part})}]])]])
-
-(def tone (partial synth/tone context))
 
 (def current-song (atom {:tempo 120
                          :parts [
@@ -155,7 +175,9 @@
        (let [part-index (current-part-index)]
          (if (not= part-index -1)
            [part (nth (:parts @song) part-index) (:tempo @song) {:on-note-click (fn [note-index]
-                                                                                  (toggle-selection song [:parts part-index :sounds note-index ]))}]
+                                                                                  (toggle-selection song [:parts part-index :sounds note-index ]))
+                                                                 :on-note-add (fn [coords]
+                                                                                (add-note song [:parts part-index] coords))}]
 
            [parts part-names]))])))
 
