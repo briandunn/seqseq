@@ -3,6 +3,8 @@
   (:require [reagent.core :as reagent :refer [atom]]
             [seqseq.transport :as transport]
             [seqseq.routes :as routes]
+            [seqseq.note :refer [coords->note]]
+            [seqseq.components.part :as part-component :refer [main]]
             [goog.events :as events]
             [seqseq.synth :as synth]
             [cljs.core.async :as async :refer [chan <! >!]])
@@ -36,77 +38,13 @@
   (swap! state assoc :transport :stop)
   (transport/stop))
 
-(defn play-bar [duration]
-  [:div.play-bar {:style {:animation-duration (str duration "s") }}])
-
-(def pitch-names ["C" "C#" "D" "D#" "E" "F" "F#" "G" "G#" "A" "A#" "B"])
-
-(def pitches (reverse (map (fn [i]
-                             (let [name (nth pitch-names (mod i (count pitch-names)))]
-                               {:name (str name i) :num i :sharp (some  (partial = \#) name)}))
-                           (range 88))))
-
-
-(defn f->% [f]
-  (str (* 100 f) "%"))
-
-(defn note->style [note beats]
-  (let [{:keys [tick beat pitch duration]} note
-        pitches (count pitches)
-        part-ticks (* 96 beats) ]
-    {:left (f->% (/ (+ tick (* 96 beat)) part-ticks))
-     :top  (str "calc(" (f->% (/ (- pitches pitch 1) pitches)) " + 3px)")
-     :width (f->% (/ duration part-ticks))}))
-
 (defn toggle-selection [song note-path]
   (swap! song update-in note-path (fn [note]
                                     (assoc note :selected? (not (:selected? note))))))
 
-(defn- coords->note [coords beats]
-  (let [total-ticks (.round js/Math (* beats 96 (:x coords)))
-        tick (mod total-ticks 96)
-        beat (/ (- total-ticks tick) 96)
-        pitch (- (.ceil js/Math (* (- 1 (:y coords)) (count pitches))) 1)]
-    {:beat beat
-     :tick tick
-     :pitch pitch
-     :duration 12
-     :play tone}))
-
 (defn add-note [song part-path coords]
   (swap! song update-in part-path (fn [part]
-                                      (update-in part [:sounds] conj (coords->note coords (:beats part))))))
-
-(defn part [current-part tempo {:keys [on-note-click on-note-add]}]
-  (let [beats (:beats current-part)
-        key-list pitches]
-    [:section#piano-roll
-     [:section#grid
-      (when (not= :stop (:transport @app-state))
-        [play-bar (transport/part->sec current-part tempo)])
-      [:div.measures
-       (for [m  (range beats)]
-         ^{:key m} [:div.measure {:style {:width (str (/ 100.0 beats) "%")}}])]
-      [:ul.notes {:onClick (fn [e]
-                             (on-note-add
-                               (let [rect (.. e -target getBoundingClientRect)]
-                                 {:x (/ (- (.-screenX e) (.-left rect)) (.-width rect))
-                                  :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))})))}
-       (map (fn [n i]
-              ^{:key (apply str (map (partial get n) [:beat :tick :pitch]))}
-              [:li {:style (note->style n beats)
-                    :class (when (:selected? n) "selected")
-                    :onClick (fn [e]
-                               (.stopPropagation e)
-                               (on-note-click i))}])
-            (:sounds current-part)
-            (range)
-            )]
-      [:ul
-       (for [k key-list]
-         ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]
-     [:ul#keyboard (for [k key-list]
-                     ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")} (:name k)] )]]))
+                                    (update-in part [:sounds] conj (assoc (coords->note coords (:beats part)) :play tone)))))
 
 (defn parts [names]
   [:section#parts
@@ -135,6 +73,11 @@
 
 (def part-names ["Q" "W" "E" "R" "A" "S" "D" "F"])
 (defn current-part-index [] (.indexOf (to-array part-names) (last (:nav @app-state))))
+
+(defn play-bar [current-part]
+  (when (not= :stop (:transport @app-state))
+    (let [duration (transport/part->sec current-part (:tempo @current-song))]
+      [:div.play-bar {:style {:animation-duration (str duration "s") }}])))
 
 (defn song-new [state]
   (let [song current-song]
@@ -174,10 +117,10 @@
              )]]]]
        (let [part-index (current-part-index)]
          (if (not= part-index -1)
-           [part (nth (:parts @song) part-index) (:tempo @song) {:on-note-click (fn [note-index]
-                                                                                  (toggle-selection song [:parts part-index :sounds note-index ]))
-                                                                 :on-note-add (fn [coords]
-                                                                                (add-note song [:parts part-index] coords))}]
+           [part-component/main (nth (:parts @song) part-index) play-bar {:on-note-click (fn [note-index]
+                                                                                           (toggle-selection song [:parts part-index :sounds note-index ]))
+                                                                          :on-note-add (fn [coords]
+                                                                                         (add-note song [:parts part-index] coords))}]
 
            [parts part-names]))])))
 
