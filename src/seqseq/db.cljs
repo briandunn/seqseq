@@ -15,18 +15,17 @@
                     :current-part-id nil
                     :transport :stop })
 
-(defn songs->ls! [songs])
-
 (def lsk "seqseq")
 
 (defn ls->songs
   "Read in songs from LS, and process into a map we can merge into app-db."
   []
-  (some->> (.getItem js/localStorage lsk)
-           (cljs.reader/read-string)   ;; stored as an EDN map.
-           (into (sorted-map))         ;; map -> sorted-map
-           (hash-map :songs)))
-(defn todos->ls!
+  (let [data (some->> (.getItem js/localStorage lsk) (cljs.reader/read-string))]
+    (merge data {:songs (into (sorted-map) (:songs data))
+                 :parts (into (sorted-map) (:parts data))
+                 :notes (into (sorted-map) (:notes data))})))
+
+(defn songs->ls!
   "Puts songs into localStorage"
   [songs]
   (.setItem js/localStorage lsk (str songs)))
