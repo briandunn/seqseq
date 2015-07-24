@@ -1,5 +1,4 @@
 (ns seqseq.synth)
-
 (defn pitch->freq [pitch]
  (* 27.50 (Math/pow 2 (/ (- pitch 9) 12))))
 

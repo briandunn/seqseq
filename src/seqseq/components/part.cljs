@@ -1,4 +1,4 @@
-(ns seqseq.components.part (:require [seqseq.note :refer [coords->note pitches]]))
+(ns seqseq.components.part (:require [seqseq.note :refer [pitches]]))
 
 (defn- f->% [f]
   (str (* 100 f) "%"))
@@ -11,8 +11,10 @@
      :top  (str "calc(" (f->% (/ (- pitches pitch 1) pitches)) " + 3px)")
      :width (f->% (/ duration part-ticks))}))
 
-(defn main [current-part play-bar {:keys [on-note-click on-note-add]}]
-  (let [beats (:beats current-part)
+(defn summary [])
+
+(defn edit [current-part notes play-bar {:keys [on-note-click on-note-add]}]
+  (let [beats (:beats @current-part)
         key-list pitches]
     [:section#piano-roll
      [:section#grid
@@ -32,7 +34,7 @@
                     :onClick (fn [e]
                                (.stopPropagation e)
                                (on-note-click i))}])
-            (:sounds current-part)
+            @notes
             (range)
             )]
       [:ul

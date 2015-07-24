@@ -143,13 +143,15 @@ section.controls {
       display: table;
       content: " ";
       clear: both; }
+    section.controls article dl {
+      float: left; }
     section.controls article dl dt, section.controls article dl dd {
       display: inline;
       position: relative; }
     section.controls article dl dt {
       margin-right: .5rem;
       margin-left: 1rem; }
-      section.controls article dl dt:first-child {
+      section.controls article dl:first-child dt {
         margin-left: 0; }
       section.controls article dl dt label {
         font-size: .75rem;

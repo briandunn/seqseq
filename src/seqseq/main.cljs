@@ -4,24 +4,29 @@
             [seqseq.transport :as transport]
             [seqseq.routes :as routes]
             [seqseq.note :refer [coords->note]]
-            [seqseq.components.part :as part-component :refer [main]]
+            [seqseq.components.part :as part-component]
+            [seqseq.subs]
             [goog.events :as events]
+            [re-frame.core :refer [subscribe dispatch]]
             [seqseq.synth :as synth]
             [cljs.core.async :as async :refer [chan <! >!]])
   (:import [goog.events EventType]))
 
-(enable-console-print!)
+
 
 (defonce app-state (atom {:songs []
                           :nav [:song-index]
                           :transport :stop}))
 
-(defn song-index [state]
+(defn song-index []
   [:section#songs
-   [:button {:on-click (fn [e]
-                         (.preventDefault e)
-                         (routes/visit (routes/song-new)))}
-    "+"]])
+   [:button {:on-click #(dispatch [:add-song])} "+"]
+   [:ul
+    (for [song (deref (subscribe [:songs]))]
+      ^{:key (:id song)} [:li.song
+                          [:a {:href "#" :onClick (fn [e]
+                                                    (.preventDefault e)
+                                                    (dispatch [:set-current-song (:id song)]))}]])]])
 
 (defonce context (new js/AudioContext))
 (defn current-time [] (.-currentTime context))
@@ -42,15 +47,19 @@
   (swap! song update-in note-path (fn [note]
                                     (assoc note :selected? (not (:selected? note))))))
 
-(defn add-note [song part-path coords]
-  (swap! song update-in part-path (fn [part]
-                                    (update-in part [:sounds] conj (assoc (coords->note coords (:beats part)) :play tone)))))
 
-(defn parts [names]
+
+(defn parts [ps]
   [:section#parts
-   [:ul (for [part names]
-          ^{:key part} [:li.part
-                        [:a {:href (routes/part {:id part})}]])]])
+   [:ul (map (fn [part]
+          (if (:blank? part)
+            ^{:key (:position part)} [:li.empty {:on-click (fn [e]
+                                                             (.preventDefault e)
+                                                             (dispatch [:add-part (:position part)]))}]
+            ^{:key (:position part)} [:li.part  {:on-click (fn [e]
+                                                             (.preventDefault e)
+                                                             (dispatch [:set-current-part (:id part)]))}
+                                      [part-component/summary]])) @ps)]])
 
 (def current-song (atom {:tempo 120
                          :parts [
@@ -71,22 +80,28 @@
                                             :duration 12
                                             :play tone}]}]}))
 
-(def part-names ["Q" "W" "E" "R" "A" "S" "D" "F"])
-(defn current-part-index [] (.indexOf (to-array part-names) (last (:nav @app-state))))
 
-(defn play-bar [current-part]
-  (when (not= :stop (:transport @app-state))
-    (let [duration (transport/part->sec current-part (:tempo @current-song))]
-      [:div.play-bar {:style {:animation-duration (str duration "s") }}])))
 
-(defn song-new [state]
-  (let [song current-song]
-    (fn [state]
+(defn play-bar [part]
+  (let [transport (subscribe [:transport])
+        song (subscribe [:current-song])]
+    (fn [part]
+      (when (not= :stop @transport)
+        (let [duration (transport/part->sec @part (:tempo @song))]
+          [:div.play-bar {:style {:animation-duration (str duration "s") }}])))))
+
+(defn song [song part]
+  (let [transport (subscribe [:transport])]
+    (fn [song part]
       [:dev
        [:section.controls
         [:h2 "sequence"]
-        [:a {:href (routes/root)} "songs"]
-        [:a {:href (routes/song-new)} "parts"]
+        [:a {:href "#" :onClick (fn [e]
+                                  (.preventDefault e)
+                                  (dispatch [:set-current-song nil])) } "songs"]
+        [:a {:href "#" :onClick (fn [e]
+                                  (.preventDefault e)
+                                  (dispatch [:set-current-part nil])) } "parts"]
         [:article
          [:dl
           [:dt
@@ -97,49 +112,55 @@
                           :type "number"
                           :value (:tempo @song)
                           :on-change (fn [e]
-                                       (swap! song assoc :tempo (.. e -target -value))
-                                       )}]]
-          [:dt
-           [:label {:for "beats"} "beats"]
-           [:dd
-            [:input#beats {:max 64
-                           :min 1
-                           :type "number"
-                           :value (get-in @song [:parts 0 :beats])
-                           :on-change (fn [e]
-                                        (swap! song assoc-in [:parts 0 :beats] (.. e -target -value))
-                                        )}]]]]
+                                       (dispatch [:set-tempo
+                                                  (-> e .-target .-value int)]))}]]]
+         (when @part
+           [:dl
+            [:dt
+             [:label {:for "beats"} "beats"]]
+            [:dd
+             [:input#beats {:max 64
+                            :min 1
+                            :type "number"
+                            :value (:beats @part)
+                            :on-change (fn [e]
+                                         (dispatch [:set-beats
+                                                    (-> e .-target .-value int)]))}]]])
          [:section
           [:div#transport
-           (if (= :play (:transport @state))
-             [:button {:on-click (fn [e] (stop state))} "◼︎" ]
-             [:button {:on-click (fn [e] (play state song))} "►"]
+           (if (= :play @transport)
+             [:button {:on-click #(dispatch [:stop])} "◼︎"]
+             [:button {:on-click #(dispatch [:play])} "►"]
              )]]]]
-       (let [part-index (current-part-index)]
-         (if (not= part-index -1)
-           [part-component/main (nth (:parts @song) part-index) play-bar {:on-note-click (fn [note-index]
-                                                                                           (toggle-selection song [:parts part-index :sounds note-index ]))
-                                                                          :on-note-add (fn [coords]
-                                                                                         (add-note song [:parts part-index] coords))}]
+       (if @part
+         [part-component/edit part (subscribe [:notes]) play-bar {:on-note-click (fn [note-index]
+                                                              (dispatch [:toggle-selection note-index]))
+                                             :on-note-add (fn [coords]
+                                                            (dispatch [:add-note coords]))}]
+         [parts (subscribe [:parts])])])))
 
-           [parts part-names]))])))
-
-(defn root [props]
+(defn root []
   [:div
    [:header
     [:h1
-     [:a {:href (routes/root)} "seqseq"]]]
-   (let [page-component ((get-in @app-state [:nav 0]) {:song-index song-index
-                                                       :song-new song-new})]
-     [page-component app-state]
-     )])
+     [:a {:href "#"
+          :on-click (fn [e]
+                      (.preventDefault e)
+                      (dispatch [:set-current-song nil]))}
+      "seqseq"]]]
+   (let [s (subscribe [:current-song])
+         p (subscribe [:current-part])]
+     (if @s
+       [song s p]
+       [song-index]))])
 
 (reagent/render [root]
                 (js/document.getElementById "app"))
 
 (defn handle-key-press [k e]
   (when (= "x" k)
-    (swap! current-song update-in [:parts (current-part-index) :sounds] (fn [sounds]
+    (dispatch [:delete-selected-notes])
+    (comment swap! current-song update-in [:parts (current-part-index) :sounds] (fn [sounds]
                                                                           (vec (remove :selected? sounds)))))
   (when (= " " k)
     (.preventDefault e)
@@ -152,14 +173,8 @@
        }))))
 
 (defn init []
-  ; listen for route changes
-  (let [route-chan (routes/init)]
-    (go-loop []
-             (when-let [route (<! route-chan)]
-               (swap! app-state assoc :nav route)
-               (recur))))
-
   ; init transport
+  (dispatch [:initialise-db])
   (transport/init)
 
   ; listen to the keyboard
