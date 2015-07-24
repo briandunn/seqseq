@@ -43,8 +43,6 @@
         (assoc db :current-song-id id)
         [:songs id] (merge {:id id} new-song-template)))))
 
-
-
 (register-handler
   :add-part
   [check-schema ->ls]
@@ -83,6 +81,17 @@
   check-schema
   (fn [db [_ _]]
     (assoc db :transport :stop)))
+
+(register-handler
+  :toggle-selection
+  check-schema
+  (fn [db [_ note-id]]
+    (update-in db [:selection] conj note-id)))
+
+(register-handler
+  :delete-selected-notes
+  (fn [db [_ _]]
+    (assoc (update-in db [:notes] #(apply dissoc % (vec (:selection db)))) :selection #{})))
 
 (register-handler
   :add-note

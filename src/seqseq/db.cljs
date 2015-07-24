@@ -6,6 +6,7 @@
              :notes (s/both PersistentTreeMap {s/Int {:id s/Int :part-id s/Int :beat s/Int :tick s/Int :duration s/Int :pitch s/Int}})
              :current-song-id (s/maybe s/Int)
              :current-part-id (s/maybe s/Int)
+             :selection #{s/Int}
              :transport (s/enum :stop :play :pause)})
 
 (def default-value {:songs (sorted-map)
@@ -13,6 +14,7 @@
                     :notes (sorted-map)
                     :current-song-id nil
                     :current-part-id nil
+                    :selection #{}
                     :transport :stop })
 
 (def lsk "seqseq")

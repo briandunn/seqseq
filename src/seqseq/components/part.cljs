@@ -27,15 +27,14 @@
                                (let [rect (.. e -target getBoundingClientRect)]
                                  {:x (/ (- (.-screenX e) (.-left rect)) (.-width rect))
                                   :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))})))}
-       (map (fn [n i]
+       (map (fn [n]
               ^{:key (apply str (map (partial get n) [:beat :tick :pitch]))}
               [:li {:style (note->style n beats)
                     :class (when (:selected? n) "selected")
                     :onClick (fn [e]
                                (.stopPropagation e)
-                               (on-note-click i))}])
+                               (on-note-click (:id n)))}])
             @notes
-            (range)
             )]
       [:ul
        (for [k key-list]

@@ -28,7 +28,11 @@
 (register-sub
   :notes
   (fn [db _]
-    (reaction (doall (filter #(= (:part-id %) (:current-part-id @db)) (-> @db :notes vals))))))
+    (reaction (map
+                #(assoc % :selected? ((:selection @db) (:id %)))
+                (filter
+                  #(= (:part-id %) (:current-part-id @db))
+                  (-> @db :notes vals))))))
 
 (register-sub
   :songs
