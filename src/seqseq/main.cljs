@@ -7,16 +7,8 @@
             [seqseq.components.part :as part-component]
             [seqseq.subs]
             [goog.events :as events]
-            [re-frame.core :refer [subscribe dispatch]]
-            [seqseq.synth :as synth]
-            [cljs.core.async :as async :refer [chan <! >!]])
+            [re-frame.core :refer [subscribe dispatch]])
   (:import [goog.events EventType]))
-
-
-
-(defonce app-state (atom {:songs []
-                          :nav [:song-index]
-                          :transport :stop}))
 
 (defn song-index []
   [:section#songs
@@ -28,17 +20,6 @@
                                                     (.preventDefault e)
                                                     (dispatch [:set-current-song (:id song)]))}]])]])
 
-(defonce context (new js/AudioContext))
-(defn current-time [] (.-currentTime context))
-(def tone (partial synth/tone context))
-
-(defn play [state song]
-  (swap! state assoc :transport :play)
-  (let [song-chan (chan)]
-    (transport/play song-chan current-time)
-    (go-loop []
-             (when (>! song-chan @song) (recur)))))
-
 (defn stop [state]
   (swap! state assoc :transport :stop)
   (transport/stop))
@@ -46,8 +27,6 @@
 (defn toggle-selection [song note-path]
   (swap! song update-in note-path (fn [note]
                                     (assoc note :selected? (not (:selected? note))))))
-
-
 
 (defn parts [ps]
   [:section#parts
@@ -60,27 +39,6 @@
                                                              (.preventDefault e)
                                                              (dispatch [:set-current-part (:id part)]))}
                                       [part-component/summary]])) @ps)]])
-
-(def current-song (atom {:tempo 120
-                         :parts [
-                                 {:beats 2
-                                  :sounds [{:beat 0
-                                            :tick 0
-                                            :pitch 57
-                                            :duration 48
-                                            :play tone}
-                                           {:beat 1
-                                            :tick 0
-                                            :pitch 59
-                                            :duration 24
-                                            :play tone}
-                                           {:beat 1
-                                            :tick 48
-                                            :pitch 60
-                                            :duration 12
-                                            :play tone}]}]}))
-
-
 
 (defn play-bar [part]
   (let [transport (subscribe [:transport])
@@ -165,11 +123,11 @@
   (when (= " " k)
     (.preventDefault e)
     (.stopPropagation e)
-    (((:transport @app-state)
+    (((deref (subscribe [:transport]))
       {:stop
-       #(play app-state current-song)
+       #(dispatch [:play])
        :play
-       #(stop app-state)
+       #(dispatch [:stop])
        }))))
 
 (defn init []

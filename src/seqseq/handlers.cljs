@@ -1,14 +1,18 @@
-(ns seqseq.handlers (:require
-                      [seqseq.db     :refer [default-value ls->songs songs->ls! schema]]
-                      [seqseq.note   :refer [coords->note]]
-                      [schema.core   :as s]
-                      [re-frame.core :refer [register-handler path trim-v after]]))
+(ns seqseq.handlers
+  (:require-macros [cljs.core.async.macros :refer [go-loop]])
+  (:require
+    [seqseq.db     :refer [default-value ls->songs songs->ls! schema]]
+    [seqseq.note   :refer [coords->note]]
+    [schema.core   :as s]
+    [seqseq.transport :as transport]
+    [cljs.core.async :as async :refer [chan >!]]
+    [re-frame.core :refer [register-handler path trim-v after subscribe]]))
 
 (defn check-and-throw
-      "throw an exception if db doesn't match the schema."
-      [a-schema db]
-      (if-let [problems  (s/check a-schema db)]
-         (throw (js/Error. (str "schema check failed: " problems)))))
+  "throw an exception if db doesn't match the schema."
+  [a-schema db]
+  (if-let [problems  (s/check a-schema db)]
+    (throw (js/Error. (str "schema check failed: " problems)))))
 
 (def check-schema (after (partial check-and-throw schema)))
 
@@ -26,13 +30,11 @@
 
 (def new-part-template {:beats 4})
 
-(defn p [args &] (.log js/console (clj->js args)) (first args))
-
 (register-handler
   :initialise-db
   check-schema
   (fn [_ _]
-    (merge default-value (p (ls->songs)))))
+    (merge default-value (ls->songs))))
 
 (register-handler
   :add-song
@@ -73,13 +75,19 @@
 (register-handler
   :play
   check-schema
-  (fn [db [_ _]]
+  (fn [db [_ current-time]]
+    (let [song-chan (chan)
+          song (subscribe [:song-feed])]
+      (transport/play song-chan)
+      (go-loop []
+               (when (>! song-chan @song) (recur))))
     (assoc db :transport :play)))
 
 (register-handler
   :stop
   check-schema
   (fn [db [_ _]]
+    (transport/stop)
     (assoc db :transport :stop)))
 
 (register-handler

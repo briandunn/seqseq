@@ -3,7 +3,12 @@
   #?(:cljs (:require-macros [cljs.core.async.macros :refer [go-loop go]]))
   (:require
     #?@(:clj [[clojure.core.async :as async :refer [go go-loop put! chan timeout <! >! close!]]]
-        :cljs [[cljs.core.async   :as async :refer [put! chan timeout <! >! close!]]])))
+        :cljs [[cljs.core.async   :as async :refer [put! chan timeout <! >! close!]]
+               [seqseq.synth :as synth]]))
+  )
+(defonce context (new js/AudioContext))
+(def tone (partial synth/tone context))
+(defn current-time [] (.-currentTime context))
 
 (defn fill [from til duration-secs start-secs]
   (let [from (* duration-secs (Math/floor (/ from duration-secs)))]
@@ -52,9 +57,7 @@
     (let [notes (notes-in-window (<! song-chan) from til)]
       (doseq [note notes]
         (let [start (+ started-at (:start note))]
-          ((:play note) start (dissoc note :play :beat :tick)))))))
-
-
+          (tone start (dissoc note :play :beat :tick)))))))
 
 (defonce -control-chan (chan))
 
@@ -77,8 +80,11 @@
                      (recur scheduled-until)))
                  (close! song-chan))))))
 
-(defn play [song-chan now]
-  (-play song-chan now))
+(defn play
+  ([song-chan]
+   (play song-chan current-time))
+  ([song-chan now]
+   (-play song-chan now)))
 
 (defn stop []
   (put! -control-chan :stop))

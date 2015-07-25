@@ -2,6 +2,16 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-sub subscribe]]))
 
+(defn- part-notes [db part-id]
+  (filter
+    #(= (:part-id %) part-id)
+    (-> db :notes vals)))
+
+(defn- song-parts [db song-id]
+  (filter
+    #(= (:song-id %) song-id)
+    (-> db :parts vals)))
+
 (register-sub
   :current-song
   (fn [db _] (reaction (get-in @db [:songs (:current-song-id @db)]))))
@@ -15,28 +25,35 @@
 (register-sub
   :parts
   (fn [db _]
-    (let [parts (filter
-                  (fn [part]
-                    (= (:song-id part) (:current-song-id @db)))
-                  (vals (:parts @db)))]
+    (let [parts (song-parts @db (:current-song-id @db))]
       (reaction (doall (map (fn [n]
                               (or
-                                (first (filter (fn [part] (= n (:position part))) parts))
+                                (first (filter (fn [part]
+                                                 (= n (:position part))) parts))
                                 {:position n :blank? true}))
                             (range 8)))))))
 
 (register-sub
   :notes
   (fn [db _]
-    (reaction (map
-                #(assoc % :selected? ((:selection @db) (:id %)))
-                (filter
-                  #(= (:part-id %) (:current-part-id @db))
-                  (-> @db :notes vals))))))
+    (reaction (doall (map
+                       #(assoc % :selected? ((:selection @db) (:id %)))
+                       (part-notes @db (:current-part-id @db)))))))
 
 (register-sub
   :songs
   (fn [db _] (reaction (vals (:songs @db)))))
+
+(register-sub
+  :song-feed
+  (fn [db _]
+    (let [song (subscribe [:current-song])
+          parts (reaction (song-parts @db (:id @song)))]
+      (reaction {:tempo (:tempo @song)
+                 :parts (map (fn [part]
+                               {:beats (:beats part)
+                                :sounds (part-notes @db (:id part))})
+                             @parts)} ))))
 
 (register-sub
   :transport
