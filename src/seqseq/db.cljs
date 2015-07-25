@@ -19,15 +19,17 @@
 
 (def lsk "seqseq")
 
+(def stored-collections #{:songs :parts :notes})
+
 (defn ls->songs
   "Read in songs from LS, and process into a map we can merge into app-db."
   []
   (let [data (some->> (.getItem js/localStorage lsk) (cljs.reader/read-string))]
-    (merge data {:songs (into (sorted-map) (:songs data))
-                 :parts (into (sorted-map) (:parts data))
-                 :notes (into (sorted-map) (:notes data))})))
+    (apply assoc {} (flatten (map
+                               (fn [k][k (into (sorted-map) (k data))])
+                               stored-collections)))))
 
 (defn songs->ls!
   "Puts songs into localStorage"
-  [songs]
-  (.setItem js/localStorage lsk (str songs)))
+  [db]
+  (.setItem js/localStorage lsk (str (select-keys db stored-collections))))
