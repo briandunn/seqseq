@@ -73,6 +73,12 @@
     (assoc-in db [:songs (:current-song-id db) :tempo] tempo)))
 
 (register-handler
+  :set-beats
+  check-schema
+  (fn [db [_ beats]]
+    (assoc-in db [:parts (:current-part-id db) :beats] beats)))
+
+(register-handler
   :play
   check-schema
   (fn [db [_ current-time]]
