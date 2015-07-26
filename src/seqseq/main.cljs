@@ -117,9 +117,8 @@
 
 (defn handle-key-press [k e]
   (when (= "x" k)
-    (dispatch [:delete-selected-notes])
-    (comment swap! current-song update-in [:parts (current-part-index) :sounds] (fn [sounds]
-                                                                          (vec (remove :selected? sounds)))))
+    (dispatch [:delete-selected-notes]))
+
   (when (= " " k)
     (.preventDefault e)
     (.stopPropagation e)
@@ -131,9 +130,10 @@
        }))))
 
 (defn init []
-  ; init transport
+  ; init db
   (dispatch [:initialise-db])
-  (transport/init)
+  ; load route
+  (routes/init)
 
   ; listen to the keyboard
   (let [keyup (fn [e] (handle-key-press (.fromCharCode js/String (.-keyCode e)) e))]

@@ -61,8 +61,6 @@
 
 (defonce -control-chan (chan))
 
-(defn init [])
-
 (defn -play [song-chan now]
   (let [started-at (now)
         buffer-time 0.50
