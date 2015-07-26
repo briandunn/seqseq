@@ -31,14 +31,14 @@
 (defn parts [ps]
   [:section#parts
    [:ul (map (fn [part]
-          (if (:blank? part)
-            ^{:key (:position part)} [:li.empty {:on-click (fn [e]
-                                                             (.preventDefault e)
-                                                             (dispatch [:add-part (:position part)]))}]
-            ^{:key (:position part)} [:li.part  {:on-click (fn [e]
-                                                             (.preventDefault e)
-                                                             (dispatch [:set-current-part (:id part)]))}
-                                      [part-component/summary]])) @ps)]])
+               (if (:blank? part)
+                 ^{:key (:position part)} [:li.empty {:on-click (fn [e]
+                                                                  (.preventDefault e)
+                                                                  (dispatch [:add-part (:position part)]))}]
+                 ^{:key (:position part)} [:li.part  {:on-click (fn [e]
+                                                                  (.preventDefault e)
+                                                                  (dispatch [:set-current-part (:id part)]))}
+                                           [:a [part-component/summary part]]])) @ps)]])
 
 (defn play-bar [part]
   (let [transport (subscribe [:transport])

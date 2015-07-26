@@ -1,4 +1,5 @@
-(ns seqseq.components.part (:require [seqseq.note :refer [pitches]]))
+(ns seqseq.components.part (:require [seqseq.note   :refer [pitches]]
+                                     [re-frame.core :refer [subscribe]]))
 
 (defn- f->% [f]
   (str (* 100 f) "%"))
@@ -7,11 +8,16 @@
   (let [{:keys [tick beat pitch duration]} note
         pitches (count pitches)
         part-ticks (* 96 beats) ]
-    {:left (f->% (/ (+ tick (* 96 beat)) part-ticks))
-     :top  (str "calc(" (f->% (/ (- pitches pitch 1) pitches)) " + 3px)")
+    {:left  (f->% (/ (+ tick (* 96 beat)) part-ticks))
+     :top   (f->% (/ (- pitches pitch 1) pitches))
      :width (f->% (/ duration part-ticks))}))
 
-(defn summary [])
+(defn summary [part]
+  (let [notes  (deref (subscribe [:notes part]))
+        height (f->% (/ 1 (count pitches))) ]
+    [:ul.notes
+     (for [n notes]
+       ^{:key (:id n)} [:li {:style (assoc (note->style n (:beats part)) :height height)}])]))
 
 (defn edit [current-part notes play-bar {:keys [on-note-click on-note-add]}]
   (let [beats (:beats @current-part)
@@ -28,14 +34,13 @@
                                  {:x (/ (- (.-screenX e) (.-left rect)) (.-width rect))
                                   :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))})))}
        (map (fn [n]
-              ^{:key (apply str (map (partial get n) [:beat :tick :pitch]))}
+              ^{:key (:id n)}
               [:li {:style (note->style n beats)
                     :class (when (:selected? n) "selected")
                     :onClick (fn [e]
                                (.stopPropagation e)
                                (on-note-click (:id n)))}])
-            @notes
-            )]
+            @notes)]
       [:ul
        (for [k key-list]
          ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]

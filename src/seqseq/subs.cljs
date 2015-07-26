@@ -35,10 +35,11 @@
 
 (register-sub
   :notes
-  (fn [db _]
-    (reaction (doall (map
-                       #(assoc % :selected? ((:selection @db) (:id %)))
-                       (part-notes @db (:current-part-id @db)))))))
+  (fn [db [_ part]]
+    (let [part-id (or (:id part) (:current-part-id @db))]
+      (reaction (doall (map
+                         #(assoc % :selected? ((:selection @db) (:id %)))
+                         (part-notes @db part-id)))))))
 
 (register-sub
   :songs
