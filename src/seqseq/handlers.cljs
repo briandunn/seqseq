@@ -6,7 +6,8 @@
     [schema.core   :as s]
     [seqseq.transport :as transport]
     [cljs.core.async :as async :refer [chan >!]]
-    [re-frame.core :refer [register-handler path trim-v after subscribe]]))
+    [re-frame.core :refer [register-handler path trim-v after subscribe]]
+    [re-frame.middleware :as mw]))
 
 (defn check-and-throw
   "throw an exception if db doesn't match the schema."
@@ -17,8 +18,6 @@
 (def check-schema (after (partial check-and-throw schema)))
 
 (def ->ls (after songs->ls!))
-
-(def log-middleware (after (fn [db] (.log js/console (clj->js db)))))
 
 (defn allocate-next-id
   "Returns the next id.
@@ -109,7 +108,7 @@
 
 (register-handler
   :add-note
-  [check-schema ->ls]
+  [check-schema (mw/undoable "add note") ->ls]
   (fn [db [_ coords]]
     (let [id (allocate-next-id (:notes db))
           part-id (:current-part-id db)

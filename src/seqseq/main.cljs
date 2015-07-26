@@ -5,10 +5,9 @@
             [seqseq.routes :as routes]
             [seqseq.note :refer [coords->note]]
             [seqseq.components.part :as part-component]
+            [seqseq.keyboard :as keyboard]
             [seqseq.subs]
-            [goog.events :as events]
-            [re-frame.core :refer [subscribe dispatch]])
-  (:import [goog.events EventType]))
+            [re-frame.core :refer [subscribe dispatch]]))
 
 (defn song-index []
   [:section#songs
@@ -115,28 +114,12 @@
 (reagent/render [root]
                 (js/document.getElementById "app"))
 
-(defn handle-key-press [k e]
-  (when (= "x" k)
-    (dispatch [:delete-selected-notes]))
-
-  (when (= " " k)
-    (.preventDefault e)
-    (.stopPropagation e)
-    (((deref (subscribe [:transport]))
-      {:stop
-       #(dispatch [:play])
-       :play
-       #(dispatch [:stop])
-       }))))
-
 (defn init []
   ; init db
   (dispatch [:initialise-db])
   ; load route
   (routes/init)
-
   ; listen to the keyboard
-  (let [keyup (fn [e] (handle-key-press (.fromCharCode js/String (.-keyCode e)) e))]
-    (events/removeAll js/window EventType.KEYPRESS)
-    (events/listen js/window EventType.KEYPRESS keyup)))
+  (keyboard/init))
+
 (init)
