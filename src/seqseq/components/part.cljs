@@ -1,5 +1,5 @@
 (ns seqseq.components.part (:require [seqseq.note   :refer [pitches]]
-                                     [re-frame.core :refer [subscribe]]))
+                                     [re-frame.core :refer [subscribe dispatch]]))
 
 (defn- f->% [f]
   (str (* 100 f) "%"))
@@ -45,4 +45,8 @@
        (for [k key-list]
          ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]
      [:ul#keyboard (for [k key-list]
-                     ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")} (:name k)] )]]))
+                     ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")
+                                                :onMouseDown #(dispatch [:play-pitch k])
+                                                :onMouseUp   #(dispatch [:stop-pitch k])
+                                                :onMouseOut  #(dispatch [:stop-pitch k])}
+                                       (:name k)] )]]))

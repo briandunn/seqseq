@@ -4,11 +4,8 @@
   (:require
     #?@(:clj [[clojure.core.async :as async :refer [go go-loop put! chan timeout <! >! close!]]]
         :cljs [[cljs.core.async   :as async :refer [put! chan timeout <! >! close!]]
-               [seqseq.synth :as synth]]))
+               [seqseq.synth      :as synth :refer [current-time tone]]]))
   )
-(defonce context (new js/AudioContext))
-(def tone (partial synth/tone context))
-(defn current-time [] (.-currentTime context))
 
 (defn fill [from til duration-secs start-secs]
   (let [from (* duration-secs (Math/floor (/ from duration-secs)))]

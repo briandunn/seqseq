@@ -371,6 +371,8 @@ section.controls {
   background: #fff;
   width: 10%; }
   #piano-roll #keyboard li {
+    -webkit-user-select: none;
+    cursor: pointer;
     color: #363636;
     padding: 0 0 0 0.3rem; }
     #piano-roll #keyboard li.sharp {
