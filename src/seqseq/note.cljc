@@ -7,11 +7,17 @@
                                {:name (str name i) :num i :sharp (some  (partial = \#) name)}))
                            (range 88))))
 
+#?(:cljs (def round #(.round js/Math %)))
+#?(:cljs (def ceil #(.ceil js/Math %)))
+
+#?(:clj  (def round #(Math/round %)))
+#?(:clj  (def ceil #(Math/ceil %)))
+
 (defn coords->note [coords beats]
-  (let [total-ticks (.round js/Math (* beats 96 (:x coords)))
+  (let [total-ticks (round (* beats 96 (:x coords)))
         tick (mod total-ticks 96)
         beat (/ (- total-ticks tick) 96)
-        pitch (- (.ceil js/Math (* (- 1 (:y coords)) (count pitches))) 1)]
+        pitch (- (ceil (* (- 1 (:y coords)) (count pitches))) 1)]
     {:beat beat
      :tick tick
      :pitch pitch
