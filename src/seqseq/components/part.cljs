@@ -19,6 +19,17 @@
      (for [n notes]
        ^{:key (:id n)} [:li {:style (assoc (note->style n (:beats part)) :height height)}])]))
 
+(defn ivories [pitches]
+  (let [down (atom false)]
+    (fn []
+      [:ul#keyboard
+       (for [k pitches]
+         ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")
+                                    :onMouseDown #(dispatch [:play-pitch k])
+                                    :onMouseUp   #(dispatch [:stop-pitch k])
+                                    :onMouseOut  #(dispatch [:stop-pitch k])}
+                           (:name k)] )])))
+
 (defn edit [current-part notes play-bar]
   (let [beats (:beats @current-part)
         key-list pitches]
@@ -44,9 +55,4 @@
       [:ul
        (for [k key-list]
          ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]
-     [:ul#keyboard (for [k key-list]
-                     ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")
-                                                :onMouseDown #(dispatch [:play-pitch k])
-                                                :onMouseUp   #(dispatch [:stop-pitch k])
-                                                :onMouseOut  #(dispatch [:stop-pitch k])}
-                                       (:name k)] )]]))
+     [ivories key-list]]))
