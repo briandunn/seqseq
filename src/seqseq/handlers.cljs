@@ -6,7 +6,7 @@
     [schema.core   :as s]
     [seqseq.transport :as transport]
     [cljs.core.async :as async :refer [chan >!]]
-    [re-frame.core :refer [register-handler path trim-v after subscribe]]
+    [re-frame.core :refer [register-handler after subscribe]]
     [re-frame.middleware :as mw]))
 
 (defn check-and-throw

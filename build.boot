@@ -16,12 +16,11 @@
                   [reagent                   "0.5.0"]])
 
 (require
-'[adzerk.boot-cljs      :refer [cljs]]
-'[adzerk.boot-test]
-'[adzerk.boot-cljs-repl :refer [cljs-repl start-repl]]
-'[adzerk.boot-reload    :refer [reload]]
-'[pandeiro.boot-http    :refer [serve]]
-)
+  '[adzerk.boot-cljs      :refer [cljs]]
+  '[adzerk.boot-test]
+  '[adzerk.boot-cljs-repl :refer [cljs-repl start-repl]]
+  '[adzerk.boot-reload    :refer [reload]]
+  '[pandeiro.boot-http    :refer [serve]])
 
 (deftask dev []
   (comp
