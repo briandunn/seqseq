@@ -9,9 +9,10 @@
               :parts [{:beats 1
                        :sounds [{:beat 0
                                  :tick 0
+                                 :duration 0
                                  :play :a}]}]}
         times (transport/notes-in-window song 0 1)]
-    (is (= [{:start 0.0 :play :a}] times))))
+    (is (= [{:start 0.0}] (map #(select-keys % [:start]) times)))))
 
 (deftest fill
   (is (= [0.0] (transport/fill 0 1 1 0)))
@@ -24,15 +25,17 @@
 (deftest play
   (let [song-chan (chan)
         time (atom 0)
-        now (fn [] @time)
+        now #(deref time)
         scheduled-sounds (atom [])]
     (go-loop []
              (>! song-chan {:tempo 60
                             :parts [{:beats 1
                                      :sounds [{:beat 0
                                                :tick 0
-                                               :play (fn [start]
-                                                       (swap! scheduled-sounds conj start))}]}]}) (recur) )
+                                               :duration 0
+                                               :play (fn [start &params]
+                                                       (swap! scheduled-sounds conj start))}]}]})
+             (recur))
     (transport/play song-chan now)
     (is (= [] @scheduled-sounds))
     (<!! (timeout 51))

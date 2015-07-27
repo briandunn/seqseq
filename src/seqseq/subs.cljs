@@ -1,6 +1,7 @@
 (ns seqseq.subs
   (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [re-frame.core :refer [register-sub subscribe]]))
+  (:require [re-frame.core :refer [register-sub subscribe]]
+            [seqseq.synth  :refer [tone]]))
 
 (defn- part-notes [db part-id]
   (filter
@@ -53,7 +54,9 @@
       (reaction {:tempo (:tempo @song)
                  :parts (map (fn [part]
                                {:beats (:beats part)
-                                :sounds (part-notes @db (:id part))})
+                                :sounds (map
+                                          (fn [note] (assoc note :play tone))
+                                          (part-notes @db (:id part)))})
                              @parts)} ))))
 
 (register-sub

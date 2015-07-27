@@ -4,8 +4,9 @@
   (:require
     #?@(:clj [[clojure.core.async :as async :refer [go go-loop put! chan timeout <! >! close!]]]
         :cljs [[cljs.core.async   :as async :refer [put! chan timeout <! >! close!]]
-               [seqseq.synth      :as synth :refer [current-time tone]]]))
-  )
+               [seqseq.synth                :refer [current-time]]])))
+
+#?(:clj (def current-time (constantly 0)))
 
 (defn fill [from til duration-secs start-secs]
   (let [from (* duration-secs (Math/floor (/ from duration-secs)))]
@@ -54,7 +55,7 @@
     (let [notes (notes-in-window (<! song-chan) from til)]
       (doseq [note notes]
         (let [start (+ started-at (:start note))]
-          (tone start (dissoc note :play :beat :tick)))))))
+          ((:play note) start (dissoc note :play :beat :tick)))))))
 
 (defonce -control-chan (chan))
 
