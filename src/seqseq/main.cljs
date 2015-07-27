@@ -90,10 +90,7 @@
              [:button {:on-click #(dispatch [:play])} "►"]
              )]]]]
        (if @part
-         [part-component/edit part (subscribe [:notes]) play-bar {:on-note-click (fn [note-index]
-                                                              (dispatch [:toggle-selection note-index]))
-                                             :on-note-add (fn [coords]
-                                                            (dispatch [:add-note coords]))}]
+         [part-component/edit part (subscribe [:notes]) play-bar]
          [parts (subscribe [:parts])])])))
 
 (defn root []

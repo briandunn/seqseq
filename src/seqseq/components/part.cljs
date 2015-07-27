@@ -19,7 +19,7 @@
      (for [n notes]
        ^{:key (:id n)} [:li {:style (assoc (note->style n (:beats part)) :height height)}])]))
 
-(defn edit [current-part notes play-bar {:keys [on-note-click on-note-add]}]
+(defn edit [current-part notes play-bar]
   (let [beats (:beats @current-part)
         key-list pitches]
     [:section#piano-roll
@@ -29,17 +29,17 @@
        (for [m (range beats)]
          ^{:key m} [:div.measure {:style {:width (str (/ 100.0 beats) "%")}}])]
       [:ul.notes {:onClick (fn [e]
-                             (on-note-add
-                               (let [rect (.. e -target getBoundingClientRect)]
-                                 {:x (/ (- (.-screenX e) (.-left rect)) (.-width rect))
-                                  :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))})))}
+                             (let [rect (.. e -target getBoundingClientRect)
+                                   coords {:x (/ (- (.-screenX e) (.-left rect)) (.-width rect))
+                                           :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))}]
+                               (dispatch [:add-note coords])))}
        (map (fn [n]
               ^{:key (:id n)}
               [:li {:style (note->style n beats)
                     :class (when (:selected? n) "selected")
                     :onClick (fn [e]
                                (.stopPropagation e)
-                               (on-note-click (:id n)))}])
+                               (dispatch [:toggle-selection (:id n)]))}])
             @notes)]
       [:ul
        (for [k key-list]
