@@ -9,15 +9,18 @@
             [seqseq.subs]
             [re-frame.core :refer [subscribe dispatch]]))
 
+(defn link-to [route & children]
+  [:a {:href "#" :onClick (fn [e]
+                            (.preventDefault e)
+                            (routes/visit route))} children])
+
 (defn song-index []
   [:section#songs
    [:button {:on-click #(dispatch [:add-song])} "+"]
    [:ul
     (for [song (deref (subscribe [:songs]))]
       ^{:key (:id song)} [:li.song
-                          [:a {:href "#" :onClick (fn [e]
-                                                    (.preventDefault e)
-                                                    (dispatch [:set-current-song (:id song)]))}]])]])
+                          [link-to (routes/song (select-keys song [:id]))]])]])
 
 (defn stop [state]
   (swap! state assoc :transport :stop)
@@ -29,15 +32,13 @@
 
 (defn parts [ps]
   [:section#parts
-   [:ul (map (fn [part]
-               (if (:blank? part)
-                 ^{:key (:position part)} [:li.empty {:on-click (fn [e]
-                                                                  (.preventDefault e)
-                                                                  (dispatch [:add-part (:position part)]))}]
-                 ^{:key (:position part)} [:li.part  {:on-click (fn [e]
-                                                                  (.preventDefault e)
-                                                                  (dispatch [:set-current-part (:id part)]))}
-                                           [:a [part-component/summary part]]])) @ps)]])
+   [:ul (for [part @ps]
+          (if (:blank? part)
+            ^{:key (:position part)} [:li.empty {:on-click (fn [e]
+                                                             (.preventDefault e)
+                                                             (dispatch [:add-part (:position part)]))}]
+            ^{:key (:position part)} [:li.part
+                                      [link-to (routes/part (select-keys part [:id]))]]))]])
 
 (defn play-bar [part]
   (let [transport (subscribe [:transport])
@@ -53,12 +54,9 @@
       [:dev
        [:section.controls
         [:h2 "sequence"]
-        [:a {:href "#" :onClick (fn [e]
-                                  (.preventDefault e)
-                                  (dispatch [:set-current-song nil])) } "songs"]
-        [:a {:href "#" :onClick (fn [e]
-                                  (.preventDefault e)
-                                  (dispatch [:set-current-part nil])) } "parts"]
+        [link-to (routes/songs) "songs"]
+        (when @part
+          [link-to (routes/song (select-keys @song [:id])) "parts"])
         [:article
          [:dl
           [:dt
@@ -97,11 +95,7 @@
   [:div
    [:header
     [:h1
-     [:a {:href "#"
-          :on-click (fn [e]
-                      (.preventDefault e)
-                      (dispatch [:set-current-song nil]))}
-      "seqseq"]]]
+     [link-to (routes/root) "seqseq"]]]
    (let [s (subscribe [:current-song])
          p (subscribe [:current-part])]
      (if @s
@@ -114,7 +108,7 @@
 (defn init []
   ; init db
   (dispatch [:initialise-db])
-  ; load route
+  ; load router
   (routes/init)
   ; listen to the keyboard
   (keyboard/init))

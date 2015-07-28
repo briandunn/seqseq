@@ -21,8 +21,6 @@
   :current-part
   (fn [db _] (reaction (get-in @db [:parts (:current-part-id @db)]))))
 
-(defn p [args &] (.log js/console (clj->js args)) (first args))
-
 (register-sub
   :parts
   (fn [db _]

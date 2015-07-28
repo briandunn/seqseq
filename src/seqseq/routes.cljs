@@ -4,31 +4,36 @@
     [re-frame.core :refer [dispatch]]
     [goog.events :as events]
     [goog.history.EventType :as EventType])
-  (:import goog.History))
+  (:import [goog History]
+           [goog.history Html5History]))
 
-(sec/set-config! :prefix "#")
-
-(enable-console-print!)
+(defonce history (new Html5History))
 
 (defn visit [route]
-  (.replace (.-location js/window) route))
+  (.setToken history (apply str (rest route))))
 
 (defroute song-new "/songs/new" []
   (dispatch [:add-song]))
 
-(defroute song "/songs/:id" {:as song}
-  (dispatch [:set-current-song (int (:id song))]))
+(defroute song "/songs/:id" [id]
+  (dispatch [:set-current-song (int id)]))
 
-(defroute part "/songs/:song-id/parts/:part-id" {:as part}
-  (dispatch [:set-current-part part]))
+(defroute part "/parts/:id" [id]
+  (dispatch [:set-current-part (int id)]))
 
 (defroute root "/" []
   (dispatch [:set-current-song nil]))
 
-(comment let [history (History.)
-      navigation EventType/NAVIGATE]
-  (goog.events/listen history
-                      navigation
-                      #(-> % .-token sec/dispatch!))
+(defroute songs "/songs" []
+  (dispatch [:set-current-song nil]))
+
+(defn init []
+  (events/removeAll history EventType/KEYPRESS)
+  (events/listen history
+                 EventType/NAVIGATE
+                 (fn [e]
+                   (.log js/console (.-token e))
+                   (sec/dispatch! (.-token e))))
+  (.setUseFragment history false)
   (.setEnabled history true)
-  (.setToken history (.getToken history)))
+  (visit (.. js/window -location -pathname)))
