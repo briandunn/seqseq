@@ -9,6 +9,7 @@
                   [pandeiro/boot-http        "0.6.2"                  :scope "test"]
                   [org.clojure/core.async    "0.1.346.0-17112a-alpha" :scope "provided"]
                   [org.clojure/clojure       "1.7.0"                  :scope "provided"]
+                  [ring/ring-devel           "1.3.2"]
                   [re-frame                  "0.4.1"]
                   [adzerk/boot-test          "1.0.4"]
                   [secretary                 "1.2.3"]
@@ -24,7 +25,7 @@
 
 (deftask dev []
   (comp
-    (serve :dir "target/")
+    (serve :handler 'seqseq.history-handler/app :reload true)
     (watch)
     (reload :on-jsreload 'seqseq.main/init)
     (speak)
