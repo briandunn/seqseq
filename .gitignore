@@ -2,4 +2,5 @@ target
 .nrepl-history
 .nrepl-port
 .repl
+.gems
 out
