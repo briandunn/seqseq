@@ -9,10 +9,10 @@
             [seqseq.subs]
             [re-frame.core :refer [subscribe dispatch]]))
 
-(defn link-to [route & children]
+(defn link-to [route child]
   [:a {:href "#" :onClick (fn [e]
                             (.preventDefault e)
-                            (routes/visit route))} children])
+                            (routes/visit route))} child])
 
 (defn song-index []
   [:section#songs
@@ -38,7 +38,8 @@
                                                              (.preventDefault e)
                                                              (dispatch [:add-part (:position part)]))}]
             ^{:key (:position part)} [:li.part
-                                      [link-to (routes/part (select-keys part [:id :song-id]))]]))]])
+                                      [link-to (routes/part (select-keys part [:id :song-id]))
+                                       [part-component/summary part]]]))]])
 
 (defn play-bar [part]
   (let [transport (subscribe [:transport])
