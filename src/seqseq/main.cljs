@@ -38,7 +38,7 @@
                                                              (.preventDefault e)
                                                              (dispatch [:add-part (:position part)]))}]
             ^{:key (:position part)} [:li.part
-                                      [link-to (routes/part (select-keys part [:id]))]]))]])
+                                      [link-to (routes/part (select-keys part [:id :song-id]))]]))]])
 
 (defn play-bar [part]
   (let [transport (subscribe [:transport])
