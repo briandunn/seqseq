@@ -40,8 +40,8 @@
        (for [m (range beats)]
          ^{:key m} [:div.measure {:style {:width (str (/ 100.0 beats) "%")}}])]
       [:ul.notes {:onClick (fn [e]
-                             (let [rect (.. e -target getBoundingClientRect)
-                                   coords {:x (/ (- (.-screenX e) (.-left rect)) (.-width rect))
+                             (let [rect (.. e -currentTarget getBoundingClientRect)
+                                   coords {:x (/ (- (.-pageX e) (.-left rect)) (.-width rect))
                                            :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))}]
                                (dispatch [:add-note coords])))}
        (map (fn [n]
