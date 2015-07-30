@@ -9,7 +9,7 @@
             [re-frame.core :refer [subscribe dispatch]]))
 
 (defn link-to [route child]
-  [:a {:href "#" :onClick (fn [e]
+  [:a {:href "#" :on-click (fn [e]
                             (.preventDefault e)
                             (routes/visit route))} child])
 
@@ -20,14 +20,6 @@
     (for [song (deref (subscribe [:songs]))]
       ^{:key (:id song)} [:li.song
                           [link-to (routes/song (select-keys song [:id]))]])]])
-
-(defn stop [state]
-  (swap! state assoc :transport :stop)
-  (transport/stop))
-
-(defn toggle-selection [song note-path]
-  (swap! song update-in note-path (fn [note]
-                                    (assoc note :selected? (not (:selected? note))))))
 
 (defn parts [ps]
   [:section#parts
