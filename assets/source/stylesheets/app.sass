@@ -43,7 +43,7 @@ a
   background-color: rgba(0, 0, 0, 0.2)
   z-index: 100
 
-input[type="text"], input[type="number"], textarea, select
+input[type="text"], input[type="number"], textarea, .select
   font: .75rem $num
   color: #474747
   padding: .5rem .7rem
@@ -142,24 +142,6 @@ section
             display: none
           a.active + a
             display: inline
-      &.instrument
-        dl
-          float: left
-          width: calc(100% - 25px)
-        button
-          float: left
-          width: 25px
-        label
-          width: 12px
-          &[for='volume']
-            text-indent: -9999px
-            height: 1.05rem
-            background: url("../img/icon_sound@2x.png") center left no-repeat
-            background-size: 12px 12px
-          &[for='shape']
-            width: auto
-          &[for='channel']
-            width: auto
       > section
         position: absolute
         top: -.9rem
@@ -357,3 +339,53 @@ section
     border: 1px dashed black
     background-color: rgba(0,0,0,0.1)
     position: absolute
+
+
+.instrument
+  article
+    +clearfix
+    font-size: 1em
+    background: #fff
+    border: 1px solid #DADADA
+    border-radius: 3rem
+    padding: .8rem 1rem
+    margin: 3.3rem 0 1rem
+    h1
+      text-transform: uppercase
+      margin-bottom: 1rem
+      margin-top: 1rem
+    .settings
+      +clearfix
+      li
+        float: left
+        margin-right: 1rem
+        input
+          width: 3rem
+      margin-bottom: 1rem
+    ul.params
+      li.enum, li.curve
+        border: 1px solid #DADADA
+        border-radius: 3rem
+        padding: .8rem 1rem
+        margin: 3.3rem 0 1rem
+      li.enum
+        label
+          text-transform: uppercase
+      figure
+        cursor: pointer
+        position: relative
+        height: 30vh
+        border: 1px solid lightgrey
+        border-radius: 2rem
+        overflow: hidden
+        .col
+          float: right
+          height: 100%
+          position: relative
+          background-color: #1AA8DD
+          box-sizing: border-box
+          & + .col
+            border-right: 1px dashed #b2b2b2
+          .value
+            position: relative
+            background-color: #fff

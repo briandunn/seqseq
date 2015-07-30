@@ -1,3 +1,111 @@
-%header
-  %h1 seqseq
-%section#instrument
+
+%section.instrument
+  %article.oscilator
+    %h1 osc
+
+    %ul.params
+      %li.enum
+        %label
+          type
+          %select
+            - for shape in %w[sine square sawtooth triangle]
+              %option= shape
+      %li.curve
+        - cols = 100
+        %h1 detune
+        %ul.settings
+          %li
+            %label
+              %span quant
+              %input(type="number"){value: cols}
+
+          %li
+            %label
+              %span lock
+              .select
+                %select
+                  - for shape in %w[note loop]
+                    %option= shape
+          %li
+            %label
+              %span beats
+              %input(type="number" value="4")
+        %figure
+          - cols.times do
+            .col(style="width:#{100.0/cols}%")
+              .value(style="height:#{rand(100)}%")
+
+      %li
+        %article
+          - cols = 1
+          %h1 detune
+          %ul.settings
+            %li
+              %label
+                %span quant
+                %input(type="number"){value: cols}
+
+            %li
+              %label
+                %span lock
+                .select
+                  %select
+                    - for shape in %w[note loop]
+                      %option= shape
+            %li
+              %label
+                %span beats
+                %input(type="number" value="4")
+          %figure
+            - cols.times do
+              .col(style="width:#{100.0/cols}%")
+                .value(style="height:#{rand(100)}%")
+
+  %article.curve
+    %h1 part curve
+    %ul
+      %li
+        %label
+          %span beats
+          %input(type="number" value="4")
+      %li
+        %label
+          %span quant
+          %input(type="number" value="4")
+
+  %article.oscilator
+    %h1 oscilator
+    %ul
+      %li
+        %label
+          %input(type="range")
+          %span detune
+      %li
+        %label
+          %span type
+          %select
+            - for shape in %w[sine square sawtooth triangle]
+              %option= shape
+
+  %article.gain
+    %h1 gain
+    %ul
+      %label
+        %input(type="range")
+        %span gain
+
+  %article.filter
+    %h1 filter
+    %ul
+      - for label in %w[freq q gain]
+        %li
+          %label
+            %span= label
+            %input(type="range")
+
+      %li
+        %label
+          %span type
+          %select
+            - for shape in %w[lowpass highpass shelf]
+              %option= shape
