@@ -70,7 +70,8 @@
                  :on-change #(-> % .-target .-value int on-change)}]]])))
 
 (defn song [song part]
-  (let [transport (subscribe [:transport])]
+  (let [transport (subscribe [:transport])
+        quant     (subscribe [:quant])]
     (fn [song part]
       [:dev
        [:section.controls
@@ -88,7 +89,11 @@
             [labeled-number-input {:value (:beats @part)
                                    :max 64
                                    :min 1
-                                   :on-change #(dispatch [:set-beats %])} "beats"]])
+                                   :on-change #(dispatch [:set-beats %])} "beats"]
+            [labeled-number-input {:value @quant
+                                   :max 96
+                                   :min 1
+                                   :on-change #(dispatch [:set-quant %])} "quant"]])
          [:section
           [:div#transport
            (if (= :play @transport)
