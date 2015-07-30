@@ -48,6 +48,27 @@
         (let [duration (transport/part->sec @part (:tempo @song))]
           [:div.play-bar {:style {:animation-duration (str duration "s") }}])))))
 
+(def html-id-seq (atom (range)))
+
+(defn- next-html-id []
+  (let [id (-> html-id-seq deref first)]
+    (reset! html-id-seq (-> html-id-seq deref rest))
+    id))
+
+(defn labeled-number-input [opts label]
+  (let [id (str "number-input-" (next-html-id))]
+    (fn [{:keys [value min max on-change]} label]
+      [:dl
+       [:dt
+        [:label {:for id} label]]
+       [:dd
+        [:input {:id id
+                 :max max
+                 :min min
+                 :type "number"
+                 :value value
+                 :on-change #(-> % .-target .-value int on-change)}]]])))
+
 (defn song [song part]
   (let [transport (subscribe [:transport])]
     (fn [song part]
@@ -58,29 +79,16 @@
         (when @part
           [link-to (routes/song (select-keys @song [:id])) "parts"])
         [:article
-         [:dl
-          [:dt
-           [:label {:for "tempo"} "tempo"]]
-          [:dd
-           [:input#tempo {:max 480
-                          :min 1
-                          :type "number"
-                          :value (:tempo @song)
-                          :on-change (fn [e]
-                                       (dispatch [:set-tempo
-                                                  (-> e .-target .-value int)]))}]]]
+         [labeled-number-input {:value (:tempo @song)
+                                :max 480
+                                :min 1
+                                :on-change #(dispatch [:set-tempo %])} "tempo"]
          (when @part
-           [:dl
-            [:dt
-             [:label {:for "beats"} "beats"]]
-            [:dd
-             [:input#beats {:max 64
-                            :min 1
-                            :type "number"
-                            :value (:beats @part)
-                            :on-change (fn [e]
-                                         (dispatch [:set-beats
-                                                    (-> e .-target .-value int)]))}]]])
+           [:div
+            [labeled-number-input {:value (:beats @part)
+                                   :max 64
+                                   :min 1
+                                   :on-change #(dispatch [:set-beats %])} "beats"]])
          [:section
           [:div#transport
            (if (= :play @transport)
