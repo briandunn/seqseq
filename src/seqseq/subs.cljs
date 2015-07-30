@@ -60,3 +60,7 @@
 (register-sub
   :transport
   (fn [db _] (reaction (:transport @db))))
+
+(register-sub
+  :quant
+  (fn [db _] (reaction (:quant @db))))

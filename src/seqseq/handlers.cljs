@@ -2,10 +2,10 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop]])
   (:require
     [seqseq.db     :refer [default-value ls->songs songs->ls! schema]]
-    [seqseq.note   :refer [coords->note]]
     [schema.core   :as s]
     [seqseq.routes :as routes :refer [visit]]
     [seqseq.transport :as transport]
+    [seqseq.handlers.note :as note]
     [cljs.core.async :as async :refer [chan >!]]
     [re-frame.core :refer [register-handler after subscribe]]
     [re-frame.middleware :as mw]))
@@ -88,6 +88,12 @@
     (assoc-in db [:parts (:current-part-id db) :beats] beats)))
 
 (register-handler
+  :set-quant
+  [check-schema]
+  (fn [db [_ quant]]
+    (assoc db :quant quant)))
+
+(register-handler
   :play
   check-schema
   (fn [db [_ current-time]]
@@ -111,6 +117,7 @@
   (fn [db [_ note-id]]
     (update-in db [:selection] conj note-id)))
 
+;note: will delete notes in parts you can't see
 (register-handler
   :delete-selected-notes
   (fn [db [_ _]]
@@ -120,7 +127,4 @@
   :add-note
   [check-schema (mw/undoable "add note") ->ls]
   (fn [db [_ coords]]
-    (let [id (allocate-next-id (:notes db))
-          part-id (:current-part-id db)
-          beats (get-in db [:parts part-id :beats])]
-      (assoc-in db [:notes id] (merge (coords->note coords beats) {:part-id part-id :id id})))))
+    (note/add db (allocate-next-id (:notes db)) coords)))

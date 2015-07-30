@@ -1,24 +1,11 @@
 ; vim: set ft=clojure:
 (ns seqseq.note)
 
+(def pitch-count 88)
+(def ticks-per-beat 96)
+
 (def pitch-names ["C" "C#" "D" "D#" "E" "F" "F#" "G" "G#" "A" "A#" "B"])
 (def pitches (reverse (map (fn [i]
                              (let [name (nth pitch-names (mod i (count pitch-names)))]
                                {:name (str name i) :num i :sharp (some  (partial = \#) name)}))
-                           (range 88))))
-
-#?(:cljs (def round #(.round js/Math %)))
-#?(:cljs (def ceil #(.ceil js/Math %)))
-
-#?(:clj  (def round #(Math/round %)))
-#?(:clj  (def ceil #(Math/ceil %)))
-
-(defn coords->note [coords beats]
-  (let [total-ticks (round (* beats 96 (:x coords)))
-        tick (mod total-ticks 96)
-        beat (/ (- total-ticks tick) 96)
-        pitch (- (ceil (* (- 1 (:y coords)) (count pitches))) 1)]
-    {:beat beat
-     :tick tick
-     :pitch pitch
-     :duration 12}))
+                           (range pitch-count))))

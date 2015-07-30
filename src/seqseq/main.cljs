@@ -3,7 +3,6 @@
   (:require [reagent.core :as reagent :refer [atom]]
             [seqseq.transport :as transport]
             [seqseq.routes :as routes]
-            [seqseq.note :refer [coords->note]]
             [seqseq.components.part :as part-component]
             [seqseq.keyboard :as keyboard]
             [seqseq.subs]
