@@ -6,8 +6,10 @@
     [seqseq.routes :as routes :refer [visit]]
     [seqseq.transport :as transport]
     [seqseq.handlers.note :as note]
-    [cljs.core.async :as async :refer [chan >!]]
-    [re-frame.core :refer [register-handler after subscribe]]
+    [cljs.core.async :as async :refer [chan >! <!]]
+    [re-frame.core :refer [register-handler after subscribe dispatch]]
+    [re-frame.handlers :refer [register-base]]
+    [reagent.core :refer [next-tick]]
     [re-frame.middleware :as mw]))
 
 (defn check-and-throw
@@ -93,23 +95,35 @@
   (fn [db [_ quant]]
     (assoc db :quant quant)))
 
-(register-handler
+(defn now []
+  (/ (.. js/window -performance now) 1000))
+
+(register-base
   :play
   check-schema
-  (fn [db [_ current-time]]
+  (fn [db [_ _]]
     (let [song-chan (chan)
           song (subscribe [:song-feed])]
       (transport/play song-chan)
       (go-loop []
-               (when (>! song-chan @song) (recur))))
-    (assoc db :transport :play)))
+               (when (>! song-chan @song)
+                 (recur))))
+    (swap! db assoc-in [:transport] {:state :play :position 0 :started-at (now)})))
+
+(register-handler
+  :update-position
+  [check-schema]
+  (fn [db [_ _]]
+    (let [playing? (= :play (get-in db [:transport :state]))]
+      (assoc-in db [:transport :position]
+                (if playing? (- (now) (get-in db [:transport :started-at])) 0)))))
 
 (register-handler
   :stop
   check-schema
   (fn [db [_ _]]
     (transport/stop)
-    (assoc db :transport :stop)))
+    (assoc-in db [:transport :state] :stop)))
 
 (register-handler
   :toggle-selection
@@ -120,6 +134,7 @@
 ;note: will delete notes in parts you can't see
 (register-handler
   :delete-selected-notes
+  [check-schema ->ls]
   (fn [db [_ _]]
     (assoc (update-in db [:notes] #(apply dissoc % (vec (:selection db)))) :selection #{})))
 

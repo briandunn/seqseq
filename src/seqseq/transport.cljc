@@ -15,25 +15,25 @@
         (recur (conj times (+ now start-secs)) (+ now duration-secs))
         times))))
 
-(defn part->sec [part tempo]
-  (* (:beats part) (/ 60 tempo)))
+(defn beats->secs [beats tempo]
+  (* beats (/ 60 tempo)))
 
 (defn song->seconds [song]
   (let [{:keys [tempo parts]} song
         secs-per-beat (/ 60 tempo)
         secs-per-tick (/ secs-per-beat 96)]
     (mapv
-      (fn [part i]
-        (let [part-duration #(part->sec part tempo)]
-          {:duration-secs (part-duration)
-           :sounds (mapv (fn [sound]
-                           (assoc sound
-                                  :start-secs (+
-                                               (* secs-per-beat (:beat sound))
-                                               (* secs-per-tick (:tick sound)))
-                                  :duration   (* secs-per-tick (:duration sound))))
-                         (:sounds part))}))
-      (:parts song) (range))))
+      (fn [part]
+        {:duration-secs (beats->secs (:beats part) tempo)
+         :sounds (mapv
+                   (fn [sound]
+                     (assoc sound
+                            :start-secs (+
+                                         (* secs-per-beat (:beat sound))
+                                         (* secs-per-tick (:tick sound)))
+                            :duration   (* secs-per-tick (:duration sound))))
+                   (:sounds part))})
+      (:parts song))))
 
 (defn notes-in-window [song from til]
   "given a from and til in seconds

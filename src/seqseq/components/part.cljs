@@ -12,10 +12,18 @@
      :top   (f->% (/ (- pitches pitch 1) pitches))
      :width (f->% (/ duration part-ticks))}))
 
+(defn play-bar [part]
+  (let [positions (subscribe [:play-head-positions])]
+    (fn [part]
+      (let [ foo [:div.play-bar {:style {:left (f->% (get @positions (:id part)))}}]]
+        (dispatch [:update-position])
+        foo))))
+
 (defn summary [part]
   (let [notes  (deref (subscribe [:notes part]))
         height (f->% (/ 1 (count pitches))) ]
     [:ul.notes
+     [play-bar part]
      (for [n notes]
        ^{:key (:id n)} [:li {:style (assoc (note->style n (:beats part)) :height height)}])]))
 
@@ -30,12 +38,12 @@
                                     :onMouseOut  #(dispatch [:stop-pitch k])}
                            (:name k)] )])))
 
-(defn edit [current-part notes play-bar]
+(defn edit [current-part notes]
   (let [beats (:beats @current-part)
         key-list pitches]
     [:section#piano-roll
      [:section#grid
-      [play-bar current-part]
+      [play-bar @current-part]
       [:div.measures
        (for [m (range beats)]
          ^{:key m} [:div.measure {:style {:width (str (/ 100.0 beats) "%")}}])]

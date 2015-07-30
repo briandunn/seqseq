@@ -17,7 +17,9 @@
              :current-part-id (s/maybe s/Int)
              :selection #{s/Int}
              :quant s/Int
-             :transport (s/enum :stop :play :pause)})
+             :transport {:state (s/enum :stop :play :pause)
+                         :started-at s/Num
+                         :position s/Num}})
 
 (def default-value {:songs (sorted-map)
                     :parts (sorted-map)
@@ -26,7 +28,9 @@
                     :current-part-id nil
                     :selection #{}
                     :quant 4
-                    :transport :stop })
+                    :transport {:state :stop
+                                :started-at 0
+                                :position 0}})
 
 (def lsk "seqseq")
 

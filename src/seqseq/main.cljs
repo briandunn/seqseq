@@ -32,13 +32,7 @@
                                       [link-to (routes/part (select-keys part [:id :song-id]))
                                        [part-component/summary part]]]))]])
 
-(defn play-bar [part]
-  (let [transport (subscribe [:transport])
-        song (subscribe [:current-song])]
-    (fn [part]
-      (when (not= :stop @transport)
-        (let [duration (transport/part->sec @part (:tempo @song))]
-          [:div.play-bar {:style {:animation-duration (str duration "s") }}])))))
+
 
 (def html-id-seq (atom (range)))
 
@@ -93,7 +87,7 @@
              [:button {:on-click #(dispatch [:play])} "►"]
              )]]]]
        (if @part
-         [part-component/edit part (subscribe [:notes]) play-bar]
+         [part-component/edit part (subscribe [:notes])]
          [parts (subscribe [:parts])])])))
 
 (defn root []

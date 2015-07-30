@@ -1,6 +1,7 @@
 (ns seqseq.subs
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-sub subscribe]]
+            [seqseq.transport :as transport]
             [seqseq.synth  :refer [tone]]))
 
 (defn- part-notes [db part-id]
@@ -57,9 +58,34 @@
                                           (part-notes @db (:id part)))})
                              @parts)} ))))
 
+(defn round-to-multiple [x base]
+  (* base (-> (/ x base) Math/floor int)))
+
+(defn position-in-part-at-time [beats tempo now]
+  (let [part-duration (transport/beats->secs beats tempo)]
+    (/
+     (- now (round-to-multiple now part-duration))
+     part-duration)))
+
+(register-sub
+  :play-head-positions
+  (fn [db _]
+    (let [song (subscribe [:current-song])]
+      (reaction (reduce
+                  (fn [m p]
+                    (assoc
+                      m
+                      (:id p)
+                      (position-in-part-at-time
+                        (:beats p)
+                        (:tempo @song)
+                        (get-in @db [:transport :position]))))
+                  {}
+                  (song-parts @db (:id @song)))))))
+
 (register-sub
   :transport
-  (fn [db _] (reaction (:transport @db))))
+  (fn [db _] (reaction (get-in @db [:transport :state]))))
 
 (register-sub
   :quant
