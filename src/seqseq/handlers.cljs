@@ -98,9 +98,9 @@
 (defn now []
   (/ (.. js/window -performance now) 1000))
 
-(register-base
+(register-handler
   :play
-  check-schema
+  [check-schema]
   (fn [db [_ _]]
     (let [song-chan (chan)
           song (subscribe [:song-feed])]
@@ -108,7 +108,7 @@
       (go-loop []
                (when (>! song-chan @song)
                  (recur))))
-    (swap! db assoc-in [:transport] {:state :play :position 0 :started-at (now)})))
+    (assoc-in db [:transport] {:state :play :position 0.01 :started-at (now)})))
 
 (register-handler
   :update-position
@@ -123,7 +123,7 @@
   check-schema
   (fn [db [_ _]]
     (transport/stop)
-    (assoc-in db [:transport :state] :stop)))
+    (assoc-in db [:transport] {:state :stop :position 0 :started-at 0})))
 
 (register-handler
   :toggle-selection

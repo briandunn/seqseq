@@ -13,19 +13,19 @@
      :width (f->% (/ duration part-ticks))}))
 
 (defn play-bar [part]
-  (let [positions (subscribe [:play-head-positions])]
+  (let [position (subscribe [:play-head-position (:id part)])]
     (fn [part]
-      (let [ foo [:div.play-bar {:style {:left (f->% (get @positions (:id part)))}}]]
-        (dispatch [:update-position])
-        foo))))
+      (dispatch [:update-position])
+      [:div.play-bar {:style {:left (f->% @position)}}])))
 
 (defn summary [part]
   (let [notes  (deref (subscribe [:notes part]))
         height (f->% (/ 1 (count pitches))) ]
-    [:ul.notes
-     [play-bar part]
-     (for [n notes]
-       ^{:key (:id n)} [:li {:style (assoc (note->style n (:beats part)) :height height)}])]))
+    (fn [part]
+      [:ul.notes
+       [play-bar part]
+       (for [n notes]
+         ^{:key (:id n)} [:li {:style (assoc (note->style n (:beats part)) :height height)}])])))
 
 (defn ivories [pitches]
   (let [down (atom false)]
