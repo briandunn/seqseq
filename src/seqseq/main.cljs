@@ -28,7 +28,7 @@
             ^{:key (:position part)} [:li.empty {:on-click (fn [e]
                                                              (.preventDefault e)
                                                              (dispatch [:add-part (:position part)]))}]
-            ^{:key (:position part)} [:li.part
+            ^{:key (:position part)} [:li.part {:class (when (:muted? part) "mute") }
                                       [link-to (routes/part (select-keys part [:id :song-id]))
                                        [part-component/summary part]]]))]])
 

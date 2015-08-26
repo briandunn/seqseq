@@ -61,6 +61,7 @@
         (merge
           {:id id
            :position position
+           :muted? false
            :song-id (:current-song-id db)}
           new-part-template)))))
 
@@ -143,3 +144,17 @@
   [check-schema (mw/undoable "add note") ->ls]
   (fn [db [_ coords]]
     (note/add db (allocate-next-id (:notes db)) coords)))
+
+(register-handler
+  :toggle-mute
+  [check-schema (mw/undoable "toggle mute") ->ls]
+  (fn [db [_ pos]]
+    (if-let [part-id (:id (first
+                         (filter
+                           (fn [part] (= pos (:position part)))
+                           (vals (:parts db)))))]
+      (update-in db [:parts part-id] (fn [part]
+                                       (merge
+                                         part
+                                         {:muted? (not (:muted? part))})))
+      db)))

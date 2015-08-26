@@ -56,7 +56,7 @@
                                 :sounds (map
                                           (fn [note] (assoc note :play tone))
                                           (part-notes @db (:id part)))})
-                             @parts)} ))))
+                            (remove :muted? @parts))} ))))
 
 (defn round-to-multiple [x base]
   (* base (Math/floor (/ x base))))

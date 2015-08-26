@@ -6,7 +6,8 @@
              :parts (s/both PersistentTreeMap {s/Int {:id s/Int
                                                       :song-id s/Int
                                                       :beats s/Int
-                                                      :position s/Int}})
+                                                      :position s/Int
+                                                      :muted? s/Bool}})
              :notes (s/both PersistentTreeMap {s/Int {:id s/Int
                                                       :part-id s/Int
                                                       :beat s/Int

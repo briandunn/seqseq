@@ -15,6 +15,8 @@
        :play
        #(dispatch [:stop])
        })))
+  (let [pos (.indexOf "qwerasdf" (str k))]
+    (when (> pos -1) (dispatch [:toggle-mute pos])))
   (when (= "u" k)
     (dispatch [:undo]))
   (when (and (= "r") (.-ctrlKey e))
