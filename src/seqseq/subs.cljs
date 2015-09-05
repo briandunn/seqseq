@@ -61,20 +61,18 @@
 (defn round-to-multiple [x base]
   (* base (Math/floor (/ x base))))
 
-(defn position-in-part-at-time [beats tempo now]
-  (let [part-duration (transport/beats->secs beats tempo)]
-    (/
-     (- now (round-to-multiple now part-duration))
-     part-duration)))
-
 (register-sub
   :play-head-position
   (fn [db [_ part-id]]
-    (let [song (subscribe [:current-song])]
-      (reaction (position-in-part-at-time
-                  (get-in @db [:parts part-id :beats])
-                  (:tempo @song)
-                  (get-in @db [:transport :position]))))))
+    (let [song  (subscribe [:current-song])
+          beats (reaction (get-in @db [:parts part-id :beats]))
+          tempo (reaction (:tempo @song))
+          now (get-in @db [:transport :position])
+          part-duration (reaction (transport/beats->secs @beats @tempo))
+          p (/
+             (- now (round-to-multiple now @part-duration))
+             part-duration)]
+      (reaction [p (* (- 1 p) part-duration)]))))
 
 (register-sub
   :transport
