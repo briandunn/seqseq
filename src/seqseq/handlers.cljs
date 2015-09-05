@@ -80,13 +80,13 @@
 
 (register-handler
   :set-tempo
-  check-schema
+  [check-schema ->ls]
   (fn [db [_ tempo]]
     (assoc-in db [:songs (:current-song-id db) :tempo] tempo)))
 
 (register-handler
   :set-beats
-  check-schema
+  [check-schema ->ls]
   (fn [db [_ beats]]
     (assoc-in db [:parts (:current-part-id db) :beats] beats)))
 
@@ -109,7 +109,7 @@
       (go-loop []
                (when (>! song-chan @song)
                  (recur))))
-    (assoc-in db [:transport] {:state :play :position 0.01 :started-at (now)})))
+    (assoc-in db [:transport] {:state :play :position 0.00 :started-at (now)})))
 
 (register-handler
   :update-position
