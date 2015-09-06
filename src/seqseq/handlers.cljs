@@ -150,9 +150,11 @@
   [check-schema (mw/undoable "toggle mute") ->ls]
   (fn [db [_ pos]]
     (if-let [part-id (:id (first
-                         (filter
-                           (fn [part] (= pos (:position part)))
-                           (vals (:parts db)))))]
+                         (filter (fn [part]
+                                   (and
+                                     (= (:current-song-id db) (:song-id part))
+                                     (= pos (:position part))))
+                                 (-> db :parts vals))))]
       (update-in db [:parts part-id] (fn [part]
                                        (merge
                                          part
