@@ -108,6 +108,7 @@
       (transport/play song-chan)
       (go-loop []
                (when (>! song-chan @song)
+                 (dispatch [:update-position])
                  (recur))))
     (assoc-in db [:transport] {:state :play :position 0.00 :started-at (now)})))
 

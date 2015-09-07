@@ -67,12 +67,13 @@
     (let [song  (subscribe [:current-song])
           beats (reaction (get-in @db [:parts part-id :beats]))
           tempo (reaction (:tempo @song))
-          now (get-in @db [:transport :position])
+          now   (reaction (get-in @db [:transport :position]))
           part-duration (reaction (transport/beats->secs @beats @tempo))
-          p (/
-             (- now (round-to-multiple now @part-duration))
-             part-duration)]
-      (reaction [p (* (- 1 p) part-duration)]))))
+          p (reaction
+              (/
+               (- @now (round-to-multiple @now @part-duration)) @part-duration))]
+      (reaction
+        [@p (* (- 1 @p) @part-duration)]))))
 
 (register-sub
   :transport

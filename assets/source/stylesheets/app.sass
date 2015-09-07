@@ -271,6 +271,12 @@ section
   z-index: 3
   box-shadow: 1px 0 white
   opacity: 0.5
+  &.go
+    left: 100% !important
+    transition-property: left
+    transition-timing-function: linear
+  &.stop
+    transition: none
 
 #piano-roll
   #grid

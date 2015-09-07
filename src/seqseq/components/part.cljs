@@ -1,5 +1,8 @@
-(ns seqseq.components.part (:require [seqseq.note   :refer [pitches]]
-                                     [re-frame.core :refer [subscribe dispatch]]))
+(ns seqseq.components.part
+  (:require-macros [reagent.ratom :refer [reaction]])
+  (:require [seqseq.note   :refer [pitches]]
+            [reagent.core  :refer [next-tick atom]]
+            [re-frame.core :refer [subscribe dispatch]]))
 
 (defn- f->% [f]
   (str (* 100 f) "%"))
@@ -13,10 +16,15 @@
      :width (f->% (/ duration part-ticks))}))
 
 (defn play-bar [part]
-  (let [position (subscribe [:play-head-position (:id part)])]
+  (let [position (subscribe [:play-head-position (:id part)])
+        counter (atom 0)
+        transition? (reaction (not= 0 (mod @counter 3)))]
     (fn [part]
-      (dispatch [:update-position])
-      [:div.play-bar {:style {:left (f->% @position)}}])))
+      (let [[left s] @position]
+        (next-tick #(swap! counter inc))
+        [:div.play-bar {:style {:left (f->% left)
+                                :transition-duration (str s "s")}
+                        :class (if @transition? "go" "stop")}]))))
 
 (defn summary [part]
   (let [notes  (deref (subscribe [:notes part]))
