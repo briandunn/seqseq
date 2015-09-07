@@ -17,8 +17,10 @@
 
 (defn play-bar [part]
   (let [position (subscribe [:play-head-position (:id part)])
+        play-state (subscribe [:transport])
+        playing? (reaction (= :play @play-state))
         counter (atom 0)
-        transition? (reaction (not= 0 (mod @counter 3)))]
+        transition? (reaction (and (not= 0 (mod @counter 3)) @playing?))]
     (fn [part]
       (let [[left s] @position]
         (next-tick #(swap! counter inc))
