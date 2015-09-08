@@ -1,8 +1,8 @@
 (ns seqseq.subs
   (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [re-frame.core :refer [register-sub subscribe]]
+  (:require [re-frame.core :refer [register-sub subscribe dispatch]]
             [seqseq.transport :as transport]
-            [seqseq.synth  :refer [tone]]))
+            [seqseq.synth  :refer [tone current-time]]))
 
 (defn- part-notes [db part-id]
   (filter
@@ -45,6 +45,16 @@
   :songs
   (fn [db _] (reaction (vals (:songs @db)))))
 
+(defn loop-tick [started-at]
+  {:beat 0
+   :tick 1
+   :duration 0
+   :pitch 0
+   :play (fn [start _ &]
+           (js/setTimeout
+             #(dispatch [:update-position])
+             (* (- start (current-time)) 1000)))})
+
 (register-sub
   :song-feed
   (fn [db _]
@@ -52,11 +62,14 @@
           parts (reaction (song-parts @db (:id @song)))]
       (reaction {:tempo (:tempo @song)
                  :parts (map (fn [part]
-                               {:beats (:beats part)
-                                :sounds (map
-                                          (fn [note] (assoc note :play tone))
-                                          (part-notes @db (:id part)))})
-                            (remove :muted? @parts))} ))))
+                               (assoc
+                                 (select-keys part [:beats :id])
+                                 :sounds
+                                 (conj
+                                   (map
+                                     (fn [note] (assoc note :play tone))
+                                     (part-notes @db (:id part))) (loop-tick (get-in @db [:transport :started-at])))))
+                             (remove :muted? @parts))} ))))
 
 (defn round-to-multiple [x base]
   (* base (Math/floor (/ x base))))
