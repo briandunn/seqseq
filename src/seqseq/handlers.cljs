@@ -5,11 +5,11 @@
     [schema.core   :as s]
     [seqseq.routes :as routes :refer [visit]]
     [seqseq.transport :as transport]
+    [seqseq.synth :refer [current-time]]
     [seqseq.handlers.note :as note]
     [cljs.core.async :as async :refer [chan >! <!]]
     [re-frame.core :refer [register-handler after subscribe dispatch]]
     [re-frame.handlers :refer [register-base]]
-    [reagent.core :refer [next-tick]]
     [re-frame.middleware :as mw]))
 
 (defn check-and-throw
@@ -96,9 +96,6 @@
   (fn [db [_ quant]]
     (assoc db :quant quant)))
 
-(defn now []
-  (/ (.. js/window -performance now) 1000))
-
 (register-handler
   :play
   [check-schema]
@@ -108,9 +105,8 @@
       (transport/play song-chan)
       (go-loop []
                (when (>! song-chan @song)
-                 (dispatch [:update-position])
                  (recur))))
-    (assoc-in db [:transport] {:state :play :position 0.00 :started-at (now)})))
+    (assoc-in db [:transport] {:state :play :position 0.00 :started-at (current-time)})))
 
 (register-handler
   :update-position
@@ -118,7 +114,7 @@
   (fn [db [_ _]]
     (let [playing? (= :play (get-in db [:transport :state]))]
       (assoc-in db [:transport :position]
-                (if playing? (- (now) (get-in db [:transport :started-at])) 0)))))
+                (if playing? (- (current-time) (get-in db [:transport :started-at])) 0)))))
 
 (register-handler
   :stop
