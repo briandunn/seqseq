@@ -127,7 +127,10 @@
   :toggle-selection
   check-schema
   (fn [db [_ note-id]]
-    (update-in db [:selection] conj note-id)))
+    (update-in db [:selection] (fn [selection]
+                                 ((if (contains? selection note-id) disj conj)
+                                  selection
+                                  note-id)))))
 
 ;note: will delete notes in parts you can't see
 (register-handler
