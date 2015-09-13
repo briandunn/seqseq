@@ -143,6 +143,12 @@
     (note/add db (allocate-next-id (:notes db)) coords)))
 
 (register-handler
+  :move-note
+  [check-schema (mw/undoable "move note") ->ls]
+  (fn [db [_ id coords]]
+    (update-in (note/add db (allocate-next-id (:notes db)) coords) [:notes] #(dissoc % id))))
+
+(register-handler
   :toggle-mute
   [check-schema (mw/undoable "toggle mute") ->ls]
   (fn [db [_ pos]]

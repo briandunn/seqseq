@@ -48,6 +48,11 @@
                                     :onMouseOut  #(dispatch [:stop-pitch k])}
                            (:name k)] )])))
 
+(defn- event->coords [e]
+  (let [rect (.. e -currentTarget getBoundingClientRect)]
+    {:x (/ (- (.-pageX e) (.-left rect)) (.-width rect))
+     :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))}))
+
 (defn edit [current-part notes]
   (let [beats (:beats @current-part)
         key-list pitches]
@@ -57,15 +62,17 @@
       [:div.measures
        (for [m (range beats)]
          ^{:key m} [:div.measure {:style {:width (str (/ 100.0 beats) "%")}}])]
-      [:ul.notes {:onClick (fn [e]
-                             (let [rect (.. e -currentTarget getBoundingClientRect)
-                                   coords {:x (/ (- (.-pageX e) (.-left rect)) (.-width rect))
-                                           :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))}]
-                               (dispatch [:add-note coords])))}
+      [:ul.notes {:onClick #(dispatch [:add-note (event->coords %)])
+                  :onDragOver #(.preventDefault %)
+                  :onDrop #(dispatch [:move-note (int (.getData (.-dataTransfer %) "text/plain")) (event->coords %)]) }
        (map (fn [n]
               ^{:key (:id n)}
               [:li {:style (note->style n beats)
                     :class (when (:selected? n) "selected")
+                    :draggable true
+                    :onDragStart (fn [e] (let [dt (.-dataTransfer e)]
+                                           (set! (.-effectAllowed dt) "move")
+                                           (.setData dt "text/plain" (str (:id n)))))
                     :onClick (fn [e]
                                (.stopPropagation e)
                                (dispatch [:toggle-selection (:id n)]))}])
