@@ -43,7 +43,21 @@
 
 (register-sub
   :songs
-  (fn [db _] (reaction (vals (:songs @db)))))
+  (fn [db _] (let [songs (reaction (vals (:songs @db)))]
+               (reaction
+                 (doall
+                   (map
+                     (fn [song]
+                       (assoc song :notes (flatten
+                                            (doall
+                                              (map
+                                                (fn [part]
+                                                  (doall
+                                                    (map (fn [note]
+                                                           (merge note (select-keys part [:position :beats])))
+                                                         (part-notes @db (:id part)))))
+                                                (song-parts @db (:id song)))))))
+                     @songs))))))
 
 (defn loop-tick [started-at]
   {:beat 0

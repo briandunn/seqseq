@@ -14,12 +14,18 @@
                             (routes/visit route))} child])
 
 (defn song-index []
-  [:section#songs
-   [:button {:on-click #(dispatch [:add-song])} "+"]
-   [:ul
-    (for [song (deref (subscribe [:songs]))]
-      ^{:key (:id song)} [:li.song
-                          [link-to (routes/song (select-keys song [:id]))]])]])
+  (let [classes ["Q" "W" "E" "R" "A" "S" "D" "F"]]
+    (fn []
+      [:section#songs
+       [:button {:on-click #(dispatch [:add-song])} "+"]
+       [:ul
+        (for [song (deref (subscribe [:songs]))]
+          ^{:key (:id song)} [:li.song
+                              [link-to (routes/song (select-keys song [:id]))
+                               [:ul.notes
+                                (.log js/console (clj->js (:notes song)))
+                                (for [note (:notes song)]
+                                  ^{:key (:id note)} [:li {:style (part-component/note->style note (:beats note)) :class (nth classes (:position note))}])]]])]])))
 
 (defn parts [ps]
   [:section#parts

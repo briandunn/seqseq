@@ -7,7 +7,7 @@
 (defn- f->% [f]
   (str (* 100 f) "%"))
 
-(defn- note->style [note beats]
+(defn note->style [note beats]
   (let [{:keys [tick beat pitch duration]} note
         pitches (count pitches)
         part-ticks (* 96 beats) ]
