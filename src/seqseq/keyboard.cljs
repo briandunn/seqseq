@@ -9,12 +9,9 @@
   (when (= " " k)
     (.preventDefault e)
     (.stopPropagation e)
-    (((deref (subscribe [:transport]))
-      {:stop
-       #(dispatch [:play])
-       :play
-       #(dispatch [:stop])
-       })))
+    (dispatch [((deref (subscribe [:transport]))
+                {:stop :play
+                 :play :stop})]))
   (let [pos (.indexOf "qwerasdf" (str k))]
     (when (> pos -1) (dispatch [:toggle-mute pos])))
   (when (= "u" k)
