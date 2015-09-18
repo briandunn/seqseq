@@ -53,6 +53,17 @@
     {:x (/ (- (.-pageX e) (.-left rect)) (.-width rect))
      :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))}))
 
+(defn note [n beats]
+  ^{:key (:id n)} [:li {:style (note->style n beats)
+                        :class (when (:selected? n) "selected")
+                        :draggable true
+                        :onDragStart (fn [e] (let [dt (.-dataTransfer e)]
+                                               (set! (.-effectAllowed dt) "move")
+                                               (.setData dt "text/plain" (str (:id n)))))
+                        :onClick (fn [e]
+                                   (.stopPropagation e)
+                                   (dispatch [:toggle-selection (:id n)]))}])
+
 (defn edit [current-part notes]
   (let [beats (:beats @current-part)
         key-list pitches]
@@ -65,18 +76,7 @@
       [:ul.notes {:onClick #(dispatch [:add-note (event->coords %)])
                   :onDragOver #(.preventDefault %)
                   :onDrop #(dispatch [:move-note (int (.getData (.-dataTransfer %) "text/plain")) (event->coords %)]) }
-       (map (fn [n]
-              ^{:key (:id n)}
-              [:li {:style (note->style n beats)
-                    :class (when (:selected? n) "selected")
-                    :draggable true
-                    :onDragStart (fn [e] (let [dt (.-dataTransfer e)]
-                                           (set! (.-effectAllowed dt) "move")
-                                           (.setData dt "text/plain" (str (:id n)))))
-                    :onClick (fn [e]
-                               (.stopPropagation e)
-                               (dispatch [:toggle-selection (:id n)]))}])
-            @notes)]
+       (map (fn [n] [note n beats]) @notes)]
       [:ul
        (for [k key-list]
          ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]
