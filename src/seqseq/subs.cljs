@@ -61,12 +61,12 @@
 
 (defn loop-tick [started-at]
   {:beat 0
-   :tick 1
+   :tick 0
    :duration 0
    :pitch 0
-   :play (fn [start _ &]
+   :play (fn [start {:keys [part-id]}]
            (js/setTimeout
-             #(dispatch [:update-position])
+             #(dispatch [:update-position part-id])
              (* (- start (current-time)) 1000)))})
 
 (register-sub

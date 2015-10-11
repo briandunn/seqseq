@@ -31,7 +31,8 @@
                             :start-secs (+
                                          (* secs-per-beat (:beat sound))
                                          (* secs-per-tick (:tick sound)))
-                            :duration   (* secs-per-tick (:duration sound))))
+                            :duration (* secs-per-tick (:duration sound))
+                            :part-id (:id part)))
                    (:sounds part))})
       (:parts song))))
 
@@ -49,8 +50,7 @@
 
 (defn -schedule [song-chan started-at from til]
   "reads the song from its chan.
-   enqueues the notes between from and til.
-   pushes beat events into the chan."
+   enqueues the notes between from and til."
   (go
     (let [notes (notes-in-window (<! song-chan) from til)]
       (doseq [note notes]

@@ -166,3 +166,9 @@
                                          part
                                          {:muted? (not (:muted? part))})))
       db)))
+
+(register-handler
+  :resize-note
+  [check-schema (mw/undoable "resize note") ->ls]
+  (fn [db [_ note value]]
+    (note/resize db note value)))
