@@ -53,16 +53,34 @@
     {:x (/ (- (.-pageX e) (.-left rect)) (.-width rect))
      :y (/ (- (.-pageY e) (+ (.-scrollY js/window) (.-top rect))) (.-height rect))}))
 
+(def drag (atom {:start-x 0 :now-x 0 :id nil}))
+
+(defn- resize-width [n]
+  (let [{:keys [id start-x now-x note?]} @drag]
+    (if (and (= id (:id n)) (not note?))
+      (- now-x start-x)
+      0)))
+
 (defn note [n beats]
-  ^{:key (:id n)} [:li {:style (note->style n beats)
-                        :class (when (:selected? n) "selected")
-                        :draggable true
-                        :onDragStart (fn [e] (let [dt (.-dataTransfer e)]
-                                               (set! (.-effectAllowed dt) "move")
-                                               (.setData dt "text/plain" (str (:id n)))))
-                        :onClick (fn [e]
-                                   (.stopPropagation e)
-                                   (dispatch [:toggle-selection (:id n)]))}])
+  [:li {:style (update-in (note->style n beats) [:width] (fn [width] (str "calc(" width " + " (resize-width n) "px)")))
+        :class (when (:selected? n) "selected")
+        :draggable true
+        :onDragStart (fn [e]
+                       (set! (.. e -dataTransfer -effectAllowed) "move")
+                       (reset! drag {:id (:id n)
+                                     :note? (not (.contains (.-classList (.-target e)) "right-handle"))
+                                     :start-x (.-pageX e)}))
+        :onClick (fn [e]
+                   (.stopPropagation e)
+                   (dispatch [:toggle-selection (:id n)]))}
+   [:div.right-handle {:draggable true
+                       :onDragStart (fn [e]
+                                      (let [dt (.-dataTransfer e)]
+                                        (.setDragImage
+                                          dt
+                                          (let [img (.createElement js/document "img")]
+                                            (.setAttribute img "src" "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+                                            img) 0 0)))}]])
 
 (defn edit [current-part notes]
   (let [beats (:beats @current-part)
@@ -74,9 +92,15 @@
        (for [m (range beats)]
          ^{:key m} [:div.measure {:style {:width (str (/ 100.0 beats) "%")}}])]
       [:ul.notes {:onClick #(dispatch [:add-note (event->coords %)])
-                  :onDragOver #(.preventDefault %)
-                  :onDrop #(dispatch [:move-note (int (.getData (.-dataTransfer %) "text/plain")) (event->coords %)]) }
-       (map (fn [n] [note n beats]) @notes)]
+                  :onDragOver (fn [e]
+                                (.preventDefault e)
+                                (let [{:keys [id note?]} @drag]
+                                  (swap! drag assoc :now-x (.-pageX e))))
+                  :onDrop (fn [e]
+                            (let [{:keys [id note?]} @drag]
+                              (dispatch [(if note? :move-note :resize-note) id (event->coords e)]))
+                            (reset! drag {}))}
+       (map (fn [n] ^{:key (:id n)} [note n beats]) @notes)]
       [:ul
        (for [k key-list]
          ^{:key (:num k)} [:li.row {:class (when (:sharp k) "sharp")}])]]

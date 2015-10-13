@@ -23,9 +23,9 @@
           ^{:key (:id song)} [:li.song
                               [link-to (routes/song (select-keys song [:id]))
                                [:ul.notes
-                                (.log js/console (clj->js (:notes song)))
                                 (for [note (:notes song)]
-                                  ^{:key (:id note)} [:li {:style (part-component/note->style note (:beats note)) :class (nth classes (:position note))}])]]])]])))
+                                  ^{:key (:id note)} [:li {:style (part-component/note->style note (:beats note))
+                                                           :class (nth classes (:position note))}])]]])]])))
 
 (defn parts [ps]
   [:section#parts
@@ -37,8 +37,6 @@
             ^{:key (:position part)} [:li.part {:class (when (:muted? part) "mute") }
                                       [link-to (routes/part (select-keys part [:id :song-id]))
                                        [part-component/summary part]]]))]])
-
-
 
 (def html-id-seq (atom (range)))
 

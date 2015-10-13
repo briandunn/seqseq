@@ -312,6 +312,18 @@ section
         border-radius: .625rem
         &.selected
           background: #18BF3B
+        .right-handle
+          border-radius: 0 0.625rem 0.625rem 0
+          right: 0px
+          height: 100%
+          max-width: 20px
+          position: absolute
+          width: 25%
+          &:hover
+            cursor: ew-resize
+        &:hover .right-handle
+          background-color: pink
+
   #keyboard
     font: .875rem/1.625rem $num
     background: #fff
