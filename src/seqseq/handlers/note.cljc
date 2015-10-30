@@ -4,14 +4,17 @@
     [seqseq.note :refer [pitch-count ticks-per-beat]]))
 
 (defn round-to-multiple [x base]
-  (* base (-> (/ x base) Math/floor int)))
+  (* base (-> (/ x base) Math/round int)))
 
 (defn quant-ticks [q]
   (-> (/ ticks-per-beat q) int))
 
 (defn- quantize-start [db x]
   (round-to-multiple
-    (Math/round (* (get-in db [:parts (:current-part-id db) :beats]) ticks-per-beat x))
+    (Math/round (*
+                 (get-in db [:parts (:current-part-id db) :beats])
+                 ticks-per-beat
+                 x))
     (quant-ticks (:quant db))))
 
 (defn- x->when [db x]
