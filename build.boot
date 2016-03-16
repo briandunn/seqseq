@@ -29,7 +29,7 @@
 
 (deftask dev []
   (comp
-    (serve :not-found 'seqseq.history-handler/app :reload true)
+    (serve :not-found 'seqseq.history-handler/app :reload true :dir "target")
     (watch)
     (middleman)
     (reload :on-jsreload 'seqseq.main/init)
